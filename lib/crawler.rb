@@ -53,19 +53,13 @@ module Crawler
 
   def Crawler.post_process value, attribute, style
     processors = []
-    processors += style.post_processors if style.post_processors
-    if style.attributes[attribute].type 
-      processors += Crawler.processors_for(style.attributes[attribute].type)
-    end
+    processors += style.post_processors || []
+    processors += style.attributes[attribute].post_processors || []
     processors.each do |processor|
+      p processor
       value = Processor.method(processor).call(value)
     end
     value
   end
 
-  def Crawler.processors_for type
-    processors = []
-    processors += [ "float" ] if type == "price"
-    processors
-  end
 end
