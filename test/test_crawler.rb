@@ -47,4 +47,21 @@ class CrawlerTest < Test::Unit::TestCase
     assert_equal entities.length, 1
     assert_equal entities.first.title , "toto" 
   end
+  
+  should "should be able to extract the attribute content with a selector in an array" do
+    path = test_path "1.html" 
+  
+    style = Helper.hostruct(
+      :selector => "body",
+      :attributes => {
+        :titles => "h1@alt"
+      }
+    )
+    entities = Crawler.extract_entities path, style
+    assert_equal entities.length, 1
+    assert_equal entities.first.titles.length , 2
+    assert_equal entities.first.titles.first , "first_h1"
+    assert_equal entities.first.titles[1] , "second_h1"
+
+  end
 end

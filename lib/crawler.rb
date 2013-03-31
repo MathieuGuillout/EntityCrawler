@@ -2,7 +2,7 @@ require "open-uri"
 require_relative 'helper'
 
 module Crawler 
-  def Crawler.extract_attribute domElement, attribute
+  def Crawler.extract_attribute domElement, attribute, many = false
     value = nil
     if attribute.match /@/
       infos = attribute.split /@/
@@ -13,14 +13,15 @@ module Crawler
       selector = attribute
     end
 
-    if not extractor.nil? 
-      elt = domElement
-      elt = domElement.css(selector).first if not selector.empty?
-      value = elt[extractor]
-    else
-      value = domElement.css(selector).text
+    elts = domElement
+    elts = domElement.css(selector) if not selector.empty?
+    elts = [elts] if not elts.kind_of? Nokogiri::XML::NodeSet
+
+    values = elts.map do |elt|
+      extractor.nil? ? elt.text : elt[extractor]
     end
-    value
+
+    many ? values : values.first
   end
 
   def Crawler.extract_entities url, style
@@ -30,7 +31,8 @@ module Crawler
     doc.css(style.selector).each do |domElement|
       entity = {}
       style.attributes.to_h.each do |key, val|
-        entity[key] = Crawler.extract_attribute domElement, val
+        many = key.match(/s$/) ? true : false
+        entity[key] = Crawler.extract_attribute domElement, val, many
       end
       entities << Helper.hashes_to_ostruct(entity)
     end
