@@ -1,4 +1,7 @@
-EntityCrawler
-=============
+Semantic Crawler
+================
 
-Crawl a web site to extract structured data
+Models
+------
+- Site ( Associated with a stylesheet)
+- Job ( Associated with a stylesheet + entity)

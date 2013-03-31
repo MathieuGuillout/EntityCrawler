@@ -1,0 +1,9 @@
+site:
+  url: "http://www.ruby-lang.org/"
+  jobs:
+    - category
+
+category:
+  attributes:
+    name: "test"
+

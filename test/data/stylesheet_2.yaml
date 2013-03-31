@@ -1,0 +1,28 @@
+site:
+  attributes:
+    id:    "showponyfashion"
+    title: "Show Pony Fashion"
+    url:   "test/data/page_2.html"
+  jobs:
+    -category
+
+category: 
+  many:     true
+  selector: "a.level-top"
+  attributes:
+    url: "@href"
+  jobs:
+    -product_url
+
+product_url:
+  many:      true
+  paginator: "div.pages a.next"
+  selector:  ".item a.product-image"
+  attributes:
+    url: "@href"
+  jobs:
+    -product
+
+product:
+  attributes:
+    title: "#productname"     
