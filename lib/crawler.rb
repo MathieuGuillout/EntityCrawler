@@ -1,5 +1,6 @@
 require "open-uri"
 require_relative 'helper'
+require_relative 'processor'
 
 module Crawler 
   def Crawler.extract_attribute domElement, attribute, many = false
@@ -40,12 +41,31 @@ module Crawler
       entity = {}
       style.attributes.to_h.each do |key, val|
         many = key.match(/s$/) ? true : false
-        entity[key] = Crawler.extract_attribute domElement, val.selector, many
+        v = Crawler.extract_attribute domElement, val.selector, many
+        v = Crawler.post_process v, key, style
+        entity[key] = v 
       end
+      ap entity
       entities << Helper.hashes_to_ostruct(entity)
     end
     entities
   end
 
+  def Crawler.post_process value, attribute, style
+    processors = []
+    processors += style.post_processors if style.post_processors
+    if style.attributes[attribute].type 
+      processors += Crawler.processors_for(style.attributes[attribute].type)
+    end
+    processors.each do |processor|
+      value = Processor.method(processor).call(value)
+    end
+    value
+  end
 
+  def Crawler.processors_for type
+    processors = []
+    processors += [ "float" ] if type == "price"
+    processors
+  end
 end
