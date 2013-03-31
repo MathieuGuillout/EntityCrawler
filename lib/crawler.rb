@@ -40,10 +40,12 @@ module Crawler
       entity = {}
       style.attributes.to_h.each do |key, val|
         many = key.match(/s$/) ? true : false
-        entity[key] = Crawler.extract_attribute domElement, val, many
+        entity[key] = Crawler.extract_attribute domElement, val.selector, many
       end
       entities << Helper.hashes_to_ostruct(entity)
     end
     entities
   end
+
+
 end

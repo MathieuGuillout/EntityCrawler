@@ -11,7 +11,7 @@ class CrawlerTest < Test::Unit::TestCase
     style = Helper.hostruct(
       :selector => "a",
       :attributes => {
-        :link => "@href"
+        :link => { :selector => "@href" }
       }
     )
     entities = Crawler.extract_entities path, style
@@ -26,7 +26,7 @@ class CrawlerTest < Test::Unit::TestCase
     style = Helper.hostruct(
       :selector => "body",
       :attributes => {
-        :title => "#title"
+        :title => { :selector => "#title" }
       }
     )
     entities = Crawler.extract_entities path, style
@@ -40,7 +40,7 @@ class CrawlerTest < Test::Unit::TestCase
     style = Helper.hostruct(
       :selector => "body",
       :attributes => {
-        :title => "a@href"
+        :title => { :selector => "a@href" }
       }
     )
     entities = Crawler.extract_entities path, style
@@ -54,7 +54,7 @@ class CrawlerTest < Test::Unit::TestCase
     style = Helper.hostruct(
       :selector => "body",
       :attributes => {
-        :titles => "h1@alt"
+        :titles => { :selector => "h1@alt" }
       }
     )
     entities = Crawler.extract_entities path, style
@@ -71,7 +71,7 @@ class CrawlerTest < Test::Unit::TestCase
     style = Helper.hostruct(
       :selector => "body",
       :attributes => {
-        :title => "=>constant title"
+        :title => { :selector => "=>constant title" }
       }
     )
     entities = Crawler.extract_entities path, style

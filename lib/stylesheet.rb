@@ -1,22 +1,36 @@
 require 'yaml'
+require 'awesome_print'
 require_relative 'helper'
 
 class Stylesheet
-  attr_reader :style
+  attr_reader :style, :style_hash
+
+  def post_process_attributes style
+    style.each do |key, val|
+      if key != "site" and style[key]["attributes"]
+        style[key]["attributes"].each do |k, v|
+          if v.kind_of? String
+            style[key]["attributes"][k] = { :selector => v }
+          end
+        end
+      end
+    end
+    style
+  end
 
   def initialize path
-    @style = Helper.hashes_to_ostruct(YAML.load_file(path))
-    if @style.site.inherits
-      parent_path = @style.site.inherits
+    style = YAML.load_file(path)
+    style = self.post_process_attributes style
+
+    if style["site"]["inherits"]
+      parent_path = style["site"]["inherits"]
       parent_path += ".yaml" unless parent_path.match /\.yaml$/
       parent_path = path.gsub /[^\/]+$/, parent_path
       parent_style = Stylesheet.new parent_path 
-      p parent_style
-      # Take parent attributes
-      # Default string => Selector for attributes
-      # Merge with parent
-      # Implement postprocessors
+      style = Helper.hash_recursive_merge(style, parent_style.style_hash)
     end
+    @style_hash = style
+    @style = Helper.hashes_to_ostruct(style)
   end
 
 end

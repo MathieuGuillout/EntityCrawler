@@ -22,4 +22,16 @@ module Helper
     Helper.hashes_to_ostruct(object)
   end
 
+  def Helper.hash_recursive_merge(hash, other_hash)
+    hash.merge(other_hash) do |key, oldval, newval|
+      result = nil
+      if oldval.class == hash.class 
+        result = Helper.hash_recursive_merge(oldval, newval)
+      else 
+        result = newval  
+      end
+      result
+    end
+  end
+ 
 end
