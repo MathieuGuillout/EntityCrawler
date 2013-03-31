@@ -42,22 +42,20 @@ module Crawler
       style.attributes.to_h.each do |key, val|
         many = key.match(/s$/) ? true : false
         v = Crawler.extract_attribute domElement, val.selector, many
-        v = Crawler.post_process v, key, style
+        v = Crawler.post_process v, key, style, { :url => url }
         entity[key] = v 
       end
-      ap entity
       entities << Helper.hashes_to_ostruct(entity)
     end
     entities
   end
 
-  def Crawler.post_process value, attribute, style
+  def Crawler.post_process value, attribute, style, context
     processors = []
     processors += style.post_processors || []
     processors += style.attributes[attribute].post_processors || []
     processors.each do |processor|
-      p processor
-      value = Processor.method(processor).call(value)
+      value = Processor.method(processor).call(value, context)
     end
     value
   end
