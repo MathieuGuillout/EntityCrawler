@@ -64,4 +64,19 @@ class CrawlerTest < Test::Unit::TestCase
     assert_equal entities.first.titles[1] , "second_h1"
 
   end
+  
+  should "should understand a constant value" do
+    path = test_path "1.html" 
+  
+    style = Helper.hostruct(
+      :selector => "body",
+      :attributes => {
+        :title => "=>constant title"
+      }
+    )
+    entities = Crawler.extract_entities path, style
+    assert_equal entities.length, 1
+    assert_equal entities.first.title , "constant title"
+
+  end
 end
