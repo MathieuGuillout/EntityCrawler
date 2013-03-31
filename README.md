@@ -1,7 +1,10 @@
-Semantic Crawler
+Entity Crawler
 ================
 
-Models
-------
-- Site ( Associated with a stylesheet)
-- Job ( Associated with a stylesheet + entity)
+Crawl a web site to extract structured data
+
+
+Tests
+-----
+To run the unit test, cd in the project folder and testrb test/
+
