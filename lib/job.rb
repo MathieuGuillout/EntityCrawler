@@ -4,13 +4,14 @@ require_relative "site"
 require_relative "crawler"
 
 class Job
-  attr_reader :entities, :new_jobs
+  attr_reader :entities, :new_jobs, :entity_type, :export_results
+
   def initialize entity_type, details, style, context = OpenStruct.new
     @entity_type = entity_type
     @details = details
     @style = style
     @context = context
-   
+    @export_results = (@style[entity_type] and @style[entity_type].save) ? true : false   
     @entities = []
     @jobs = []
   end
