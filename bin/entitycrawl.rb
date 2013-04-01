@@ -10,8 +10,8 @@ program :description, 'Crawl a web site to extract structured data'
 command :'crawl' do |c|
   c.syntax = 'crawl <stylesheet_path> [options]'
   c.description = "Extract entities from a web site according to a stylesheet"
-  c.option '--export TYPE', String, "Export the entities"
-  c.option '--to PARAMS', String, "Pass params to export (db string connection, folder, ...)"
+  c.option '--export TYPE', String, "Export the entities (stdout, mongo)"
+  c.option '--to PARAMS', String, "Pass params to export (db string connection)"
   c.action { |args, options| crawl_website(args.first, options) }
 end
 
@@ -28,7 +28,11 @@ def crawl_website stylesheet_path, options
   while jobs.length > 0 do 
     job = jobs.pop
     job.run()
-    export_method.call(job.entities, job.entity_type) if options.export and job.export_results
+
+    if options.export and job.export_results
+      export_method.call(job.entities, job.entity_type, options.to)    
+    end
+
     jobs += job.new_jobs
   end
 end
@@ -38,7 +42,3 @@ def crawl_entity stylesheet_path, entity, url
   job = Job.new entity, OpenStruct.new(:url => url), style
   job.run()
 end
-
-
-
-

@@ -8,5 +8,7 @@ gem 'nokogiri'
 gem 'awesome_print'
 gem 'mongo_mapper'
 gem 'commander'
+gem 'bson_ext'
+gem 'mongo'
 
 # vim: syntax=ruby
