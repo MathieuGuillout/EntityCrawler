@@ -9,7 +9,7 @@ class JobTest < Test::Unit::TestCase
     path = test_path "stylesheet1.yaml" 
  
     class CrawlerMock
-      def self.extract_entities url, style
+      def self.extract_entities url, style, content = {}
         [ { :name => "1" }, { :name => "2" } ]
       end
     end

@@ -23,6 +23,7 @@ def crawl_website stylesheet_path
   while jobs.length > 0 do 
     job = jobs.pop
     job.run()
+    ap job.entities.map {|x| x.marshal_dump }
     jobs += job.new_jobs
   end
 end
@@ -31,6 +32,7 @@ def crawl_entity stylesheet_path, entity, url
   style = (Stylesheet.new stylesheet_path).style
   job = Job.new entity, OpenStruct.new(:url => url), style
   job.run()
+  ap job.entities.map {|x| x.marshal_dump }
 end
 
 

@@ -9,7 +9,7 @@ class Processor
   end
   
   def Processor.price value, context = {}
-    value.nil? ? value : value.gsub(/[^0-9,\.]/, '').to_f
+    value.scan(/[1-9][0-9.\,]*/).first.to_f if value and not value.nil?
   end
 
   def Processor.url value, context = {}

@@ -71,12 +71,44 @@ class CrawlerTest < Test::Unit::TestCase
     style = Helper.hostruct(
       :selector => "body",
       :attributes => {
-        :title => { :selector => "=>constant title" }
+        :title => { :const => "constant title" }
       }
     )
     entities = Crawler.extract_entities path, style
     assert_equal entities.length, 1
     assert_equal entities.first.title , "constant title"
+
+  end
+  
+  should "should understand a parent value" do
+    path = test_path "1.html" 
+  
+    style = Helper.hostruct(
+      :selector => "body",
+      :attributes => {
+        :title => { :parent => "title" }
+      }
+    )
+    entities = Crawler.extract_entities path, style, Helper.hostruct({:title => "ParentTitle"})
+    assert_equal entities.length, 1
+    assert_equal entities.first.title , "ParentTitle"
+
+  end
+  
+  should "should call a handler method" do
+    path = test_path "1.html" 
+  
+    style = Helper.hostruct(
+      :selector => "body",
+      :attributes => {
+        :title => { :const => "title" }
+      },
+      :post_handlers => [ "TestHandler_1.process_test" ]
+    )
+    context = { :path => path }
+    entities = Crawler.extract_entities path, style, Helper.hostruct(context)
+    assert_equal 1, entities.length
+    assert_equal true, entities.first.processed 
 
   end
 end
