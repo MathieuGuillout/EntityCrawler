@@ -3,7 +3,7 @@ require_relative 'helper'
 require_relative 'processor'
 
 class Crawler 
-  @@post_handlers = {}
+  @@handlers = {}
   def Crawler.get_attribute_value domElement, attribute, many = false, context = {}
 
     if attribute.const
@@ -48,30 +48,34 @@ class Crawler
       style.attributes.to_h.each do |key, val|
         many = key.match(/s$/) ? true : false
         v = Crawler.get_attribute_value domElement, val, many, context
-        v = Crawler.post_process v, key, style, { :url => url }
+        v = Crawler.post_process v, key, style, context
         entity[key] = v 
       end
       entity = Helper.hashes_to_ostruct(entity)
-      entity = Crawler.post_handlers entity, style, context
+      entity = Crawler.handlers entity, style, context
       entities << entity
     end
     entities
   end
 
-  def Crawler.post_handlers entity, style, context = {}
+  def Crawler.get_handler handler_class, context
+    # Load the handler if not yet loaded
+    if not @@handlers[handler_class]
+      file = context.path.gsub(/[^\/]+$/, "#{handler_class}.rb")
+      load(file)
+      handlerClass = Kernel.const_get("PostHandlers::#{handler_class}") 
+      @@handlers[handler_class] = handlerClass
+    end
+    @@handlers[handler_class]
+  end
+
+  def Crawler.handlers entity, style, context = OpenStruct.new
     (style.post_handlers || []).each do |post_handler|
       infos = post_handler.split /\./
       handler_class = infos.first
       handler_method = infos.last
-
-      # Load the handler if not yet loaded
-      if not @@post_handlers[handler_class]
-        file = context.path.gsub(/[^\/]+$/, "#{handler_class}.rb")
-        load(file)
-        handlerClass = Kernel.const_get("PostHandlers::#{handler_class}") 
-        @@post_handlers[handler_class] = handlerClass
-      end
-      entity = @@post_handlers[handler_class].method(handler_method).call(entity)
+  
+      entity = Crawler.get_handler(handler_class, context).method(handler_method).call(entity)
     end
     entity
   end
@@ -81,7 +85,14 @@ class Crawler
     processors += style.attributes_post_processors || []
     processors += style.attributes[attribute].post_processors || []
     processors.each do |processor|
-      value = Processor.method(processor).call(value, context)
+      if not processor.match /\./
+        value = Processor.method(processor).call(value, context)
+      else
+        infos = processor.split /\./
+        handler_class = infos.first
+        handler_method = infos.last
+        value = Crawler.get_handler(handler_class, context).method(handler_method).call(value, context) 
+      end
     end
     value
   end

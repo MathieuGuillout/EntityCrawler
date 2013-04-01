@@ -111,4 +111,23 @@ class CrawlerTest < Test::Unit::TestCase
     assert_equal true, entities.first.processed 
 
   end
+  
+  should "should call a handler method to process a attribute" do
+    path = test_path "1.html" 
+  
+    style = Helper.hostruct(
+      :selector => "body",
+      :attributes => {
+        :title => { 
+          :const => "title" ,
+          :post_processors => [ "TestHandler_1.process_attribute" ]
+        }
+      }
+    )
+    context = { :path => path }
+    entities = Crawler.extract_entities path, style, Helper.hostruct(context)
+    assert_equal 1, entities.length
+    assert_equal "p-title", entities.first.title
+
+  end
 end
