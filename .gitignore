@@ -1,3 +1,4 @@
 Gemfile.lock
 samples
 *.swp
+.DS_Store
