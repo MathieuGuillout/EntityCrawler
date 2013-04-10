@@ -1,2 +1,7 @@
+ENV['TERM_CHILD'] = "1"
+ENV['COUNT']      = "10"
+ENV['QUEUE']      = "*"
+ENV['INTERVAL']   = "0.1"
+
 ROOT_PATH = File.expand_path("..", __FILE__)
 load File.join(ROOT_PATH, 'resque.rake')
