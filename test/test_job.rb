@@ -20,7 +20,7 @@ class JobTest < Test::Unit::TestCase
       Helper.hostruct( :category => { :jobs => [ "sub_category" ] } )
     )
 
-    job.run(CrawlerMock)
+    job.perform(CrawlerMock)
     assert_equal job.new_jobs.length, 2
     assert_equal job.entities.length, 2
   end

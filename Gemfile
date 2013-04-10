@@ -10,5 +10,4 @@ gem 'mongo_mapper'
 gem 'commander'
 gem 'bson_ext'
 gem 'mongo'
-
-# vim: syntax=ruby
+gem 'resque'

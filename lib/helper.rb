@@ -23,6 +23,18 @@ module Helper
     Helper.hashes_to_ostruct(object)
   end
 
+  def Helper.ostructh(struct) 
+    res = {}
+    struct.each_pair do |key, value|
+      if value.class == OpenStruct
+        res[key] = Helper.ostructh(value)
+      else
+        res[key] = value
+      end
+    end
+    res
+  end
+
   def Helper.hash_recursive_merge(hash, other_hash)
     hash.merge(other_hash) do |key, oldval, newval|
       result = nil

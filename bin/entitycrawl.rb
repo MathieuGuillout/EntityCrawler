@@ -1,4 +1,5 @@
 require 'commander/import'
+require 'resque'
 
 require_relative '../lib/site'
 require_relative '../lib/helper'
@@ -20,21 +21,31 @@ command :'entity' do |c|
   c.action { |args, options| crawl_entity(args.first, args[1], args[2]) }
 end
 
+command :'worker' do |c|
+  c.syntax = 'worker'
+  c.action { |args, options| work() }
+end
+
+
+def work 
+  klass, args = Resque.reserve(:crawl_page)
+  if klass.respond_to? :perform
+    klass.perform(*args)   
+  end
+end
+
+
 
 def crawl_website stylesheet_path, options
   site = Site.new stylesheet_path
-  export_method = Helper.get_export_method(options.export) if options.export
   jobs = site.crawl
-  while jobs.length > 0 do 
-    job = jobs.pop
-    job.run()
 
-    if options.export and job.export_results
-      export_method.call(job.entities, job.entity_type, options.to)    
-    end
-
-    jobs += job.new_jobs
+  jobs = jobs.map do |job|
+    job.options = { :export => options.export, :to => options.to }
+    job
   end
+
+  jobs.each do |job| job.queue_me() end
 end
 
 def crawl_entity stylesheet_path, entity, url
