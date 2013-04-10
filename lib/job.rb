@@ -1,5 +1,6 @@
 require "nokogiri"
 require "net/http"
+require "resque"
 require_relative "site"
 require_relative "crawler"
 require_relative "helper"
