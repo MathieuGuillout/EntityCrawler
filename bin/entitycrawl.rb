@@ -11,11 +11,13 @@ program :description, 'Crawl a web site to extract structured data'
 command :'crawl' do |c|
   c.syntax = 'crawl <stylesheet_path> [options]'
   c.description = "Extract entities from a web site according to a stylesheet"
-  c.option '--export TYPE', String, "Export the entities (stdout, mongo)"
-  c.option '--to PARAMS', String, "Pass params to export (db string connection)"
+  c.option '--export TYPE', String, "Export the entities (stdout, mongo, json)"
+  c.option '--to PARAMS', String, "Pass params to export (db string connection, folder, etc..)"
   c.option "--resque", "Queue jobs in resque / redis configured instance"
   c.option "--threads NB", String, "Run locally with NB threads"
-  c.action { |args, options| crawl_website(args.first, options) }
+  c.action { |args, options| 
+    crawl_website(args.first, options) 
+  }
 end
 
 
