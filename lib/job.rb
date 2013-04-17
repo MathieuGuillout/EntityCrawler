@@ -36,6 +36,7 @@ class Job
 
   def perform(crawler=Crawler)
 
+  
     context = @details
     context.path = @context.path if @context and @context.path
     @entities = crawler.extract_entities @details.url, @style[@entity_type], context
@@ -46,15 +47,19 @@ class Job
       export_method.call(@entities, @entity_type, @options.to)    
     end
 
-    queue_new_jobs()
   end
+
 
   def self.perform *args 
     args_instance = args.map do |a| (a.class == Hash) ? Helper.hostruct(a) : a end
     instance = new(*args_instance)
-    instance.perform()
+    instance.resque_perform()
   end
 
+  def resque_perform(crawler=Crawler)
+    perform(crawler)
+    queue_new_jobs()
+  end
    
   def queue_me
     Resque.enqueue(Job, 

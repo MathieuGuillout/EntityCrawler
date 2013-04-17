@@ -14,7 +14,7 @@ class Processor
 
   def Processor.url value, context = {}
     val = value
-    if not(value.match(/^http/)) and context[:url]
+    if not value.nil? and not(value.match(/^http/)) and context[:url]
       if value.match /^\//
         link = val
         d = Domainatrix.parse context[:url]
