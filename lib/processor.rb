@@ -1,4 +1,4 @@
-require 'Domainatrix'
+require 'domainatrix'
 
 class Processor
   
