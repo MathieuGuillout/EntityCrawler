@@ -30,6 +30,7 @@ def crawl_website stylesheet_path, options
     job
   end
 
+
   # If runned in resque mode
   # We just those jobs in resque
   if options.resque

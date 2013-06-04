@@ -36,7 +36,7 @@ class Job
 
   def perform(crawler=Crawler)
 
-  
+    print "#{@details.url}\n"
     context = @details
     context.path = @context.path if @context and @context.path
     @entities = crawler.extract_entities @details.url, @style[@entity_type], context
