@@ -77,8 +77,10 @@ class Crawler
   
       entity = Crawler.get_handler(handler_class, context).method(handler_method).call(entity)
     end
+
     entity
   end
+
 
   def Crawler.post_process value, attribute, style, context
     processors = []

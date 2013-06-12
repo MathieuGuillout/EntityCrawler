@@ -14,6 +14,7 @@ module EntityCrawl
     end
 
     def MongoExport.save entities, entity_type, params = ""
+      p entities
       MongoExport.connect(params) if @@db.nil?
       
       collection_name = "#{entity_type}s"

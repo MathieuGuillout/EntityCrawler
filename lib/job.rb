@@ -1,6 +1,7 @@
 require "nokogiri"
 require "net/http"
 require "resque"
+
 require_relative "site"
 require_relative "crawler"
 require_relative "helper"
@@ -12,7 +13,6 @@ class Job
   @queue = :crawl_page
 
   def initialize entity_type, details, style, context = OpenStruct.new, options = OpenStruct.new
-  
     @entity_type = entity_type
     @details = details
     @style = style
@@ -35,7 +35,6 @@ class Job
   end
 
   def perform(crawler=Crawler)
-
     print "#{@details.url}\n"
     context = @details
     context.path = @context.path if @context and @context.path
@@ -46,7 +45,6 @@ class Job
       export_method = Helper.get_export_method(@options.export) if @options.export
       export_method.call(@entities, @entity_type, @options.to)    
     end
-
   end
 
 
