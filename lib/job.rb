@@ -15,6 +15,7 @@ class Job
   def initialize entity_type, details, style, context = OpenStruct.new, options = OpenStruct.new
     @entity_type = entity_type
     @details = details
+    @crawl_timestamp = details.crawl_timestamp
     @style = style
     @context = context
     @export_results = (@style[entity_type] and @style[entity_type].save) ? true : false   
@@ -28,6 +29,7 @@ class Job
     entities.each do |entity|
       @style[@entity_type].jobs ||= []
       @style[@entity_type].jobs.each do |next_entity_type|
+        entity.crawl_timestamp = @crawl_timestamp
         jobs << Job.new(next_entity_type, entity, @style, @context, @options)
       end
     end
@@ -35,11 +37,21 @@ class Job
   end
 
   def perform(crawler=Crawler)
-    print "#{@details.url}\n"
     context = @details
     context.path = @context.path if @context and @context.path
     @entities = crawler.extract_entities @details.url, @style[@entity_type], context
+    @entities = @entities.map do |entity| 
+      entity.crawl_timestamp = @crawl_timestamp
+      entity
+    end
+  
     @new_jobs = new_jobs_for @entities
+
+    # If no style on the command line, but style from the stylesheet
+    if not @options.export and @style["site"]["export"] 
+      @options.export = @style["site"]["export"]["type"]
+      @options.to = @style["site"]["export"]["connection"]
+    end
 
     if @options.export and @export_results
       export_method = Helper.get_export_method(@options.export) if @options.export
