@@ -17,9 +17,10 @@ block content
         td #{crawl.count}
         td #{crawl.version}
         td
-          table
-            tbody
-              each field in fields
-                tr
-                  td #{field}
-                  td #{crawl[field]}
+          div.details
+            table
+              tbody
+                each field in fields
+                  tr
+                    td #{field}
+                    td #{crawl[field]}
