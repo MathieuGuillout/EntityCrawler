@@ -1,1 +1,25 @@
-h1 TOTO
+extends layout
+
+block content
+  table.table
+    thead
+      tr
+        th Site
+        th When
+        th Items count
+        th Version 
+        th Details
+    tbody
+    each crawl in crawls
+      tr
+        td #{crawl.site}
+        td #{moment(crawl.crawl * 1000).fromNow()}
+        td #{crawl.count}
+        td #{crawl.version}
+        td
+          table
+            tbody
+              each field in fields
+                tr
+                  td #{field}
+                  td #{crawl[field]}

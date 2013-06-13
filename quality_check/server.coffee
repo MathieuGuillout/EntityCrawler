@@ -3,6 +3,7 @@ express      = require 'express'
 mongoose     = require 'mongoose'
 config       = require 'config'
 _            = require 'underscore'
+moment       = require 'moment'
 routes       = require './routes'
 
 # CREATE A WEB SERVER
@@ -20,7 +21,7 @@ allowCrossDomain = (req, res, next) ->
   res.header "Access-Control-Allow-Headers", "X-Requested-With"
   next()
 
-
+app.locals.moment = require 'moment'
 
 # WEB SERVER CONFIGURATION 
 app.configure () ->
