@@ -12,26 +12,42 @@ Our map function
 We want results for the whole thing, plus on each stylesheet
 
     mapR = () -> 
-      emit 'test', 1
+      key = 
+        site :    @site_name
+        version : @version
+        crawl   : @crawl_timestamp
+      emit key, @
 
 We compute some key metrics
 How important fields are filled, and globally how it's filled
 
-    reduceR = (prev, doc) ->
-      prev.test += 1
+    reduceR = (prev, docs) ->
+      
+      result = {}
+
+      for doc in docs
+        result.count = 0 if not result.count?
+
+        result.count += 1
+        for k, v of doc
+          unless k == "_id"
+            result[k] = 0 if not result[k]?
+            result[k] += 1 if v?
+
+      result
 
 Execute our queries on the products collection
 
-    computeQuality = (params, done) ->
-      mongoose.connection.db.executeDbCommand
-        mapreduce : 'products'
-        map : mapR.toString()
-        reduce : reduceR.toString()
-        out : "quality"
-      , (err, ret) ->
-        console.log(err) if err?
-        console.log ret
-        done()
+    mapReduceQuery =
+      mapreduce : 'products'
+      map       : "#{mapR}"
+      reduce    : "#{reduceR}"
+      out       : "quality"
+
+    computeQuality = (params, done) -> 
+      mongoose.connection.db.executeDbCommand mapReduceQuery, (err, res) ->
+        console.error err, res 
+        done err, res
 
 Let's run the thing
 

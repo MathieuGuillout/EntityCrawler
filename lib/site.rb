@@ -11,10 +11,7 @@ class Site
   end
 
   def crawl
-    
-    # We need a crawl identifier, let's take a timestamp
     @style.site.attributes.crawl_timestamp = Time.now.to_i
-
     @style.site.jobs.map do |entity| 
       job = Job.new(entity, @style.site.attributes, @style, @context)
     end
