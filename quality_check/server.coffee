@@ -9,7 +9,7 @@ routes       = require './routes'
 app = express()
 
 # CONNECTION TO THE DB 
-mongoose.connect config.db
+mongoose.connect config.mongo
 
 #To allow cross origin calls from another web page
 allowCrossDomain = (req, res, next) ->
@@ -30,10 +30,6 @@ app.configure () ->
   app.use express.static "#{__dirname}/public"
   app.use express.cookieParser()
   app.use express.bodyParser()
-
-  app.use express.cookieSession(secret : config.sessionSecret)
-  app.use auth.initialize()
-  app.use auth.session()
 
   app.use allowCrossDomain
   app.use app.router

@@ -1,1 +1,5 @@
+# DB Configuration
 mongo: "mongodb://localhost/fashion"
+
+# WEB Configuration
+port: 3000

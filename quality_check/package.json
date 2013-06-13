@@ -13,6 +13,8 @@
     "mongoose": "~3.6.11",
     "config": "~0.4.25",
     "js-yaml": "~2.1.0",
-    "barefoot": "0.0.13"
+    "barefoot": "0.0.13",
+    "express": "~3.2.6",
+    "jade": "~0.31.2"
   }
 }
