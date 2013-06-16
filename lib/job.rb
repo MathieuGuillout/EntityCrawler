@@ -10,6 +10,7 @@ class Job
   attr_reader :entities, :new_jobs, :entity_type, :export_results, :details, :style, :context
   attr_accessor :options
 
+
   @queue = :crawl_page
 
   def initialize entity_type, details, style, context = OpenStruct.new, options = OpenStruct.new
@@ -36,16 +37,43 @@ class Job
     jobs
   end
 
-  def perform(crawler=Crawler)
-    context = @details
-    context.path = @context.path if @context and @context.path
-    @entities = crawler.extract_entities @details.url, @style[@entity_type], context
+  def iterations 
+    url = @details.url || @style[@entity_type].url
+
+    regex_iterator = /\$\$iterator\$\$/
+
+    first, last = @style[@entity_type].iterator.split ".."
+    iterator = first..last
+
+    jobs = []
+    iterator.each do |it|
+      target_url = url.gsub regex_iterator, it.to_s
+      details = @details.clone
+      details.url = target_url
+      jobs << Job.new(@entity_type, details, @style, @context, @options)
+    end
+
+    @new_jobs = jobs
+  end
+
+  def extraction(crawler=Crawler)
+
+    url = @details.url || @style[@entity_type].url
+
+    @entities = crawler.extract_entities url, @style[@entity_type], context
+
     @entities = @entities.map do |entity| 
       entity.crawl_timestamp = @crawl_timestamp
       entity
     end
+
+    print "Extracted entities : \n" if DEBUG
+    ap @entities if DEBUG
   
     @new_jobs = new_jobs_for @entities
+
+    #print "New jobs : \n" if DEBUG
+    #ap @new_jobs if DEBUG
 
     # If no style on the command line, but style from the stylesheet
     if not @options.export and @style["site"]["export"] 
@@ -57,6 +85,26 @@ class Job
       export_method = Helper.get_export_method(@options.export) if @options.export
       export_method.call(@entities, @entity_type, @options.to)    
     end
+
+  end
+
+
+  def perform(crawler=Crawler)
+    url = @details.url || @style[@entity_type].url
+
+    context = @details
+    context.path = @context.path if @context and @context.path
+
+    @entities = []
+  
+    regex_iterator = /\$\$iterator\$\$/
+   
+    if @style[@entity_type].iterator and url.match regex_iterator
+      self.iterations()
+    else
+      self.extraction(crawler)
+    end
+
   end
 
 

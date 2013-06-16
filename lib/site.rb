@@ -2,7 +2,7 @@ require_relative "stylesheet"
 require_relative "job"
 
 class Site
-  attr_accessor :style
+  attr_accessor :style, :context
 
   def initialize stylesheet_path
     @context = OpenStruct.new(:path => stylesheet_path)
@@ -11,10 +11,13 @@ class Site
   end
 
   def crawl
+
+    #@style.site.jobs.map do |entity| 
+    #  job = Job.new(entity, @style.site.attributes, @style, @context)
+    #end
+    
     @style.site.attributes.crawl_timestamp = Time.now.to_i
-    @style.site.jobs.map do |entity| 
-      job = Job.new(entity, @style.site.attributes, @style, @context)
-    end
+    [ Job.new("site", @style.site.attributes, @style, @context) ]
   end
 
 end

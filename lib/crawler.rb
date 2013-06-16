@@ -5,8 +5,10 @@ require_relative 'processor'
 class Crawler 
   @@handlers = {}
   def Crawler.get_attribute_value domElement, attribute, many = false, context = {}
-
-    if attribute.const
+    
+    if attribute.kind_of? String or attribute.kind_of? Fixnum
+      attribute 
+    elsif attribute.const
       attribute.const
     elsif attribute.parent and context[attribute.parent]
       context[attribute.parent] 
@@ -40,6 +42,9 @@ class Crawler
   end
 
   def Crawler.extract_entities url, style, context = {}
+
+    print "crawling #{url}\n" if DEBUG
+
     doc = Nokogiri::HTML(open(URI::encode(url)))
     entities = []
     root_elements = (style.selector.nil? || style.selector.empty?) ? [doc] : doc.css(style.selector) 
@@ -85,7 +90,11 @@ class Crawler
   def Crawler.post_process value, attribute, style, context
     processors = []
     processors += style.attributes_post_processors || []
-    processors += style.attributes[attribute].post_processors || []
+
+    if not ( style.attributes[attribute].kind_of? String or style.attributes[attribute].kind_of? Fixnum )
+      processors += style.attributes[attribute].post_processors || []
+    end
+
     processors.each do |processor|
       if not processor.match /\./
         value = Processor.method(processor).call(value, context)

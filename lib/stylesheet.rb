@@ -27,7 +27,7 @@ class Stylesheet
       parent_path += ".yaml" unless parent_path.match /\.yaml$/
       parent_path = path.gsub /[^\/]+$/, parent_path
       parent_style = Stylesheet.new parent_path 
-      style = Helper.hash_recursive_merge(style, parent_style.style_hash)
+      style = Helper.hash_recursive_merge(parent_style.style_hash, style)
     end
     @style_hash = style
     @style = Helper.hashes_to_ostruct(style)

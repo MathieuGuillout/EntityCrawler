@@ -1,6 +1,8 @@
 require 'commander/import'
 require 'resque'
 
+DEBUG = true
+
 require_relative '../lib/site'
 require_relative '../lib/helper'
 
@@ -14,12 +16,30 @@ command :'crawl' do |c|
   c.option '--export TYPE', String, "Export the entities (stdout, mongo, json)"
   c.option '--to PARAMS', String, "Pass params to export (db string connection, folder, etc..)"
   c.option "--resque", "Queue jobs in resque / redis configured instance"
+
+  # Developer helpers
   c.option "--threads NB", String, "Run locally with NB threads"
+  c.option "--url URL", String, "Url to crawl"
+  c.option "--entity ENTITY", String, "Type of entity to crawl"
+
   c.action { |args, options| 
-    crawl_website(args.first, options) 
+    if not options.url then
+      crawl_website(args.first, options) 
+    else
+      crawl_url(args.first, options.entity, options.url) 
+    end
   }
 end
 
+# Should be used only for dev purposes.
+# Useful to debug or create a stylesheet
+def crawl_url stylesheet_path, entity_type, url
+  site = Site.new stylesheet_path
+  details = site.style[entity_type].attributes
+  details.url = url
+  job = Job.new(entity_type, details, site.style, site.context) 
+  job.perform()
+end
 
 def crawl_website stylesheet_path, options
   site = Site.new stylesheet_path
