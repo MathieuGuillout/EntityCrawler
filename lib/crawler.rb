@@ -5,7 +5,6 @@ require_relative 'processor'
 class Crawler 
   @@handlers = {}
   def Crawler.get_attribute_value domElement, attribute, many = false, context = {}
-
     if attribute.kind_of? String or attribute.kind_of? Fixnum
       attribute 
     elsif attribute.const
@@ -43,7 +42,6 @@ class Crawler
 
   def Crawler.extract_entities url, style, context = {}
 
-    print "crawling #{url}\n" if DEBUG
 
     doc = Nokogiri::HTML(open(URI::encode(url)))
     entities = []

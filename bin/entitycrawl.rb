@@ -1,8 +1,6 @@
 require 'commander/import'
 require 'resque'
 
-DEBUG = true
-
 require_relative '../lib/site'
 require_relative '../lib/helper'
 

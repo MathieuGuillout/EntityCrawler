@@ -59,6 +59,7 @@ class Job
   def extraction(crawler=Crawler)
 
     url = @details.url || @style[@entity_type].url
+    context = @details
 
     @entities = crawler.extract_entities url, @style[@entity_type], context
 
@@ -67,13 +68,7 @@ class Job
       entity
     end
 
-    print "Extracted entities : \n" if DEBUG
-    @entities.each do |e| ap Helper.ostructh(e) end if DEBUG
-  
     @new_jobs = new_jobs_for @entities
-
-    #print "New jobs : \n" if DEBUG
-    #ap @new_jobs if DEBUG
 
     # If no style on the command line, but style from the stylesheet
     if not @options.export and @style["site"]["export"] 
