@@ -68,7 +68,7 @@ class Job
     end
 
     print "Extracted entities : \n" if DEBUG
-    ap @entities if DEBUG
+    @entities.each do |e| ap Helper.ostructh(e) end if DEBUG
   
     @new_jobs = new_jobs_for @entities
 

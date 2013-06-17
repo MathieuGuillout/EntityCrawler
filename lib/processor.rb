@@ -12,6 +12,10 @@ class Processor
     value.scan(/[1-9][0-9.\,]*/).first.to_f if value and not value.nil?
   end
 
+  def Processor.text value, context = {}
+    value.gsub /[\-]*\t/, '. '
+  end
+
   def Processor.url value, context = {}
     val = value
     if not value.nil? and not(value.match(/^http/)) and context[:url]
