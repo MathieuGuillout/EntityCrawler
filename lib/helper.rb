@@ -2,6 +2,7 @@ require 'ostruct'
 module Helper
 
   @@export_methods = {}
+
   # CF http://www.dribin.org/dave/blog/archives/2006/11/17/hashes_to_ostruct/
   def Helper.hashes_to_ostruct(object)
     return case object
@@ -47,14 +48,17 @@ module Helper
     end
   end
 
-  def Helper.get_export_method name
-    if not @@export_methods[name]
+
+
+  def Helper.get_export_method name, methodName
+    @@export_methods[methodName] = {} if not @@export_methods[methodName]
+    if not @@export_methods[methodName][name]
       file = "#{File.dirname(__FILE__)}/export/#{name}.rb"
       load(file)
       export_class = Kernel.const_get("EntityCrawl::#{name.capitalize}Export") 
-      @@export_methods[name] = export_class.method("save")
+      @@export_methods[methodName][name] = export_class.method(methodName)
     end
-    @@export_methods[name]
+    @@export_methods[methodName][name]
   end
 end
  

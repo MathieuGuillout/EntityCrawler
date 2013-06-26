@@ -4,6 +4,7 @@ require "resque"
 
 require_relative "site"
 require_relative "crawler"
+require_relative "cdn"
 require_relative "helper"
 
 class Job
@@ -20,6 +21,8 @@ class Job
     @style = style
     @context = context
     @export_results = (@style[entity_type] and @style[entity_type].save) ? true : false   
+    @handle_diffs   = (@style[entity_type] and @style[entity_type].handle_diffs) ? @style[entity_type].handle_diffs : nil   
+    @cdn_config     = @style["site"]["cdn"] || false
     @entities = []
     @jobs = []
     @options = options
@@ -59,6 +62,7 @@ class Job
   def extraction(crawler=Crawler)
 
     url = @details.url || @style[@entity_type].url
+
     context = @details
 
     @entities = crawler.extract_entities url, @style[@entity_type], context
@@ -77,8 +81,17 @@ class Job
     end
 
     if @options.export and @export_results
-      export_method = Helper.get_export_method(@options.export) if @options.export
+      export_method = Helper.get_export_method(@options.export, "save")
       export_method.call(@entities, @entity_type, @options.to)    
+    end
+
+    if @options.export and @handle_diffs
+      diff_method = Helper.get_export_method(@options.export, "diff")
+      diff_method.call(url, @handle_diffs, @entities, @entity_type, @options.to)
+    end
+
+    if @cdn_config and CDN.has_a_job @style, @entity_type
+      CDN.save @style, @entity_type, @entities, @cdn_config
     end
 
   end
