@@ -1,4 +1,5 @@
 require "open-uri"
+require 'digest/md5'
 require_relative 'helper'
 require_relative 'processor'
 
@@ -49,10 +50,13 @@ class Crawler
     root_elements.each do |domElement|
       entity = {}
       style.attributes.to_h.each do |key, val|
+
         many = key.match(/s$/) ? true : false
         v = Crawler.get_attribute_value domElement, val, many, context
         v = Crawler.post_process v, key, style, context
+
         entity[key] = v 
+        entity[key.to_s + "_cdn"] = Digest::MD5.hexdigest(v) if val.kind_of? OpenStruct and val["cdn"]
       end
       entity = Helper.hashes_to_ostruct(entity)
       entity = Crawler.handlers entity, style, context

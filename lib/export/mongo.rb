@@ -29,8 +29,15 @@ module EntityCrawl
       existing_entities = collection.find( "id" => { "$in" => entities.map(&:id) } ).to_a
       existing_entities_ids = existing_entities.map{|elt| elt["id"]}
 
+      entities = entities.map {|entity|
+        entity.update = existing_entities_ids.include? entity.id  
+        entity
+      }
+
       # Split into a list to update and a list to save
-      to_add = entities.find_all{|entity| not(existing_entities_ids.include? entity.id) }
+      to_add = entities.find_all{|entity| 
+        not(existing_entities_ids.include? entity[:id]) 
+      }
       to_update = entities.find_all{|entity| existing_entities_ids.include? entity.id }
 
       # Perform operations on db
@@ -40,6 +47,8 @@ module EntityCrawl
         update = MongoExport.are_not_the_same entity, entity_db
         collection.update({"id" => entity.id}, entity.marshal_dump) if update
       end
+
+      entities
     end
 
 
@@ -52,10 +61,6 @@ module EntityCrawl
       collection_name = "#{entity_type}s"
       collection = @@db.collection(collection_name)
       
-      print "compute diffs on #{parent_id} with #{entity_type}\n"
-      print "collection name : #{collection_name} #{entities.length}\n"
-  
-
       to_compare = entities.map {|entity| entity[target_property] }
 
       previous = collection.find_one( "id" => parent_id )

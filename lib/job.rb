@@ -20,8 +20,8 @@ class Job
     @crawl_timestamp = details.crawl_timestamp
     @style = style
     @context = context
-    @export_results = (@style[entity_type] and @style[entity_type].save) ? true : false   
-    @handle_diffs   = (@style[entity_type] and @style[entity_type].handle_diffs) ? @style[entity_type].handle_diffs : nil   
+    @export_results = (@style[entity_type] and @style[entity_type].save) ? true : false
+    @handle_diffs   = @style[entity_type].handle_diffs || false
     @cdn_config     = @style["site"]["cdn"] || false
     @entities = []
     @jobs = []
@@ -82,7 +82,7 @@ class Job
 
     if @options.export and @export_results
       export_method = Helper.get_export_method(@options.export, "save")
-      export_method.call(@entities, @entity_type, @options.to)    
+      @entities = export_method.call(@entities, @entity_type, @options.to)    
     end
 
     if @options.export and @handle_diffs
@@ -140,4 +140,5 @@ class Job
   def queue_new_jobs
     @new_jobs.each do |job| job.queue_me() end
   end
+
 end
