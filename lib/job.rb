@@ -63,6 +63,8 @@ class Job
 
     url = @details.url || @style[@entity_type].url
 
+    print "Crawling entity #{@entity_type} with url : #{url}\n"
+
     context = @details
 
     @entities = crawler.extract_entities url, @style[@entity_type], context

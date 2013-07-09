@@ -41,10 +41,7 @@ class Crawler
     many ? values : values.first
   end
 
-  def Crawler.extract_entities url, style, context = {}
-
-
-    doc = Nokogiri::HTML(open(URI::encode(url)))
+  def Crawler.extract_entities_page doc, style, context = {}
     entities = []
     root_elements = (style.selector.nil? || style.selector.empty?) ? [doc] : doc.css(style.selector) 
     root_elements.each do |domElement|
@@ -62,6 +59,29 @@ class Crawler
       entity = Crawler.handlers entity, style, context
       entities << entity
     end
+    entities
+  end
+
+  def Crawler.extract_entities url, style, context = {}
+    doc = Nokogiri::HTML(open(URI::encode(url)))
+    entities = Crawler.extract_entities_page doc, style, context
+    
+    context[:nb_pages] = 0 if not context[:nb_pages]
+    context[:nb_pages] += 1
+
+    if style.paginator and
+       style.paginator.next_page and
+       (not(style.paginator.max_number) or context[:nb_pages] < style.paginator.max_number) 
+        
+      next_url = Crawler.extract_attribute doc, style.paginator.next_page
+      p next_url
+      next_url = Processor.url next_url, { :url => url }
+      
+      entities += Crawler.extract_entities next_url, style, context
+    end
+
+    entities = entities.slice(0, style["max_number"]) if style["max_number"]
+    ap entities
     entities
   end
 

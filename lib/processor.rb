@@ -1,11 +1,16 @@
 require 'domainatrix'
 
 class Processor
-  
+
+  def Processor.utrim value
+    value.gsub! /\n\s*/, ' ' 
+    value.strip
+  end
+
   def Processor.trim value, context = {}
     (value.kind_of? Array) ? 
-      value.map{|s| s.nil? ? s : s.strip} : 
-      (value.nil? ? value : value.strip)
+      value.map{|s| s.nil? ? s : Processor.utrim(s)} : 
+      (value.nil? ? value : Processor.utrim(value))
   end
   
   def Processor.price value, context = {}
