@@ -63,25 +63,28 @@ class Crawler
   end
 
   def Crawler.extract_entities url, style, context = {}
+
+    p url
+
     doc = Nokogiri::HTML(open(URI::encode(url)))
     entities = Crawler.extract_entities_page doc, style, context
     
     context[:nb_pages] = 0 if not context[:nb_pages]
     context[:nb_pages] += 1
 
-    if style.paginator and
-       style.paginator.next_page and
-       (not(style.paginator.max_number) or context[:nb_pages] < style.paginator.max_number) 
-        
-      next_url = Crawler.extract_attribute doc, style.paginator.next_page
-      p next_url
+    if style.next_page and
+       (not(style.next_page.max_number) or context[:nb_pages] < style.next_page.max_number) 
+       
+      next_url = Crawler.extract_attribute doc, style.next_page.selector
+      next_url = Crawler.post_process next_url, "next_page", style, context
       next_url = Processor.url next_url, { :url => url }
       
       entities += Crawler.extract_entities next_url, style, context
     end
 
     entities = entities.slice(0, style["max_number"]) if style["max_number"]
-    ap entities
+
+    entities.each do |e| ap Helper.ostructh(e) end
     entities
   end
 
@@ -110,11 +113,18 @@ class Crawler
 
 
   def Crawler.post_process value, attribute, style, context
+
     processors = []
     processors += style.attributes_post_processors || []
-
-    if not ( style.attributes[attribute].kind_of? String or style.attributes[attribute].kind_of? Fixnum )
+  
+   
+    if not(style.attributes[attribute].nil?) and
+       not ( style.attributes[attribute].kind_of? String or style.attributes[attribute].kind_of? Fixnum )
       processors += style.attributes[attribute].post_processors || []
+    end
+
+    if (style[attribute] and style[attribute].post_processors)
+      processors += style[attribute].post_processors
     end
 
     processors.each do |processor|
