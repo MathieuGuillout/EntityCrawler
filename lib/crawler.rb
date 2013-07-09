@@ -64,8 +64,7 @@ class Crawler
 
   def Crawler.extract_entities url, style, context = {}
 
-    p url
-
+    #print "#{url}\n"
     doc = Nokogiri::HTML(open(URI::encode(url)))
     entities = Crawler.extract_entities_page doc, style, context
     
@@ -79,12 +78,12 @@ class Crawler
       next_url = Crawler.post_process next_url, "next_page", style, context
       next_url = Processor.url next_url, { :url => url }
       
-      entities += Crawler.extract_entities next_url, style, context
+      entities += Crawler.extract_entities(next_url, style, context) if next_url != url
     end
 
     entities = entities.slice(0, style["max_number"]) if style["max_number"]
 
-    entities.each do |e| ap Helper.ostructh(e) end
+    #entities.each do |e| ap Helper.ostructh(e) end
     entities
   end
 
