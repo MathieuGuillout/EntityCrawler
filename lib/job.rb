@@ -64,6 +64,7 @@ class Job
     url = @details.url || @style[@entity_type].url
 
     context = @details
+    context.cookies = @style["site"].cookies
 
     @entities = crawler.extract_entities url, @style[@entity_type], context
 
@@ -99,6 +100,8 @@ class Job
 
   def perform(crawler=Crawler)
     url = @details.url || @style[@entity_type].url
+
+    p url, @entity_type
 
     context = @details
     context.path = @context.path if @context and @context.path

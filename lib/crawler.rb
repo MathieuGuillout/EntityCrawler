@@ -64,8 +64,20 @@ class Crawler
 
   def Crawler.extract_entities url, style, context = {}
 
-    #print "#{url}\n"
-    doc = Nokogiri::HTML(open(URI::encode(url)))
+    if context.cookies
+      cookie = ""
+      Helper.ostructh(context.cookies).each do |key, val|
+        cookie += "#{key}=#{val} ;"
+      end
+      context[:cookie] = cookie
+    end
+
+    url = url.strip() if not url.nil?
+    if url.nil? or url == ""
+      return []
+    end
+
+    doc = Nokogiri::HTML(open(URI::encode(url), "Cookie" => context[:cookie]))
     entities = Crawler.extract_entities_page doc, style, context
     
     context[:nb_pages] = 0 if not context[:nb_pages]
@@ -77,6 +89,7 @@ class Crawler
       next_url = Crawler.extract_attribute doc, style.next_page.selector
       next_url = Crawler.post_process next_url, "next_page", style, context
       next_url = Processor.url next_url, { :url => url }
+      print "NEXT #{next_url}\n"
       
       entities += Crawler.extract_entities(next_url, style, context) if next_url != url
     end
