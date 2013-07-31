@@ -9,7 +9,7 @@ require_relative "helper"
 
 class Job
   attr_reader :entities, :new_jobs, :entity_type, :export_results, :details, :style, :context
-  attr_accessor :options
+  attr_accessor :options, :failures
 
 
   @queue = :crawl_page
@@ -26,6 +26,7 @@ class Job
     @entities = []
     @jobs = []
     @options = options
+    @failures = 0
   end
 
   def new_jobs_for entities

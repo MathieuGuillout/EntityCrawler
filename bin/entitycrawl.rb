@@ -40,10 +40,16 @@ def crawl_url stylesheet_path, entity_type, url
 end
 
 def run_job queue
-  job = queue.pop()
-  job.perform()
-  job.new_jobs.each do |new_job| 
-    queue << new_job 
+  begin 
+    job = queue.pop()
+    job.perform()
+    job.new_jobs.each do |new_job| 
+      queue << new_job 
+    end
+  rescue Exception => ex
+    print "Exception", ex
+    job.failures += 1
+    queue << job if job.failures < 3
   end
 end
 
@@ -82,11 +88,7 @@ def crawl_website stylesheet_path, options
     1.upto(nb_threads) do |i|
       threads << Thread.new do 
         until queue.empty?
-          begin
-            run_job queue
-          rescue Exception => ex
-            print "Exception", ex
-          end
+          run_job queue
         end
       end
     end
