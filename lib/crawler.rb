@@ -81,7 +81,6 @@ class Crawler
       return []
     end
 
-    print "#{url}\n"
     page = open(URI::encode(url), "Cookie" => context[:cookie])
     doc = Nokogiri::HTML(page)
     entities = Crawler.extract_entities_page doc, style, context

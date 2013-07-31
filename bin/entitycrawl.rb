@@ -3,6 +3,7 @@ require 'resque'
 
 require_relative '../lib/site'
 require_relative '../lib/helper'
+require_relative '../lib/crawling_queue'
 
 program :name, 'entitycrawl'
 program :version, '0.0.1'
@@ -14,6 +15,7 @@ command :'crawl' do |c|
   c.option '--export TYPE', String, "Export the entities (stdout, mongo, json)"
   c.option '--to PARAMS', String, "Pass params to export (db string connection, folder, etc..)"
   c.option "--resque", "Queue jobs in resque / redis configured instance"
+  c.option "--folder", "Read all stylesheets from a path"
 
   # Developer helpers
   c.option "--threads NB", String, "Run locally with NB threads"
@@ -39,27 +41,34 @@ def crawl_url stylesheet_path, entity_type, url
   job.perform()
 end
 
-def run_job queue
-  begin 
-    job = queue.pop()
-    job.perform()
-    job.new_jobs.each do |new_job| 
-      queue << new_job 
-    end
-  rescue Exception => ex
-    print "Exception", ex
-    job.failures += 1
-    queue << job if job.failures < 3
-  end
+
+
+def job_site_name job
+  job.style.site.attributes.site_name.const
 end
 
-def crawl_website stylesheet_path, options
-  site = Site.new stylesheet_path
-  jobs = site.crawl
 
-  jobs = jobs.map do |job|
-    job.options = Helper.hostruct({ :export => options.export, :to => options.to })
-    job
+def crawl_website stylesheet_path, options
+  jobs = []
+ 
+ 
+  sites = []
+  if options.folder
+    Dir.entries(stylesheet_path).each do |stylesheet|
+      if stylesheet.match /yaml$/
+        site = Site.new(File.join(stylesheet_path, stylesheet))
+        sites << site if site.style.site.crawl 
+      end
+    end
+  else
+    sites << Site.new(stylesheet_path)
+  end
+ 
+  sites.each do |site| 
+    jobs += site.crawl.map do |job|
+      job.options = Helper.hostruct({ :export => options.export, :to => options.to })
+      job
+    end
   end
 
 
@@ -67,36 +76,19 @@ def crawl_website stylesheet_path, options
   # We just those jobs in resque
   if options.resque
 
-    jobs.each do |job| 
-      job.queue_me() 
-    end
+    jobs.each do |job| job.queue_me() end
 
   # If run in local threads mode
   # We just do all those jobs now with multiple threads
   elsif options.threads
+    
+    queue = CrawlingQueue.new(
+      :nb_threads => options.threads.to_i,
+      :sites => sites,
+      :jobs  => jobs
+    )
 
-    nb_threads = options.threads.to_i
-    threads = []
-    queue = Queue.new
-
-    jobs.each do |job| queue << job end
-
-    while (queue.length < nb_threads) do 
-      run_job queue
-    end
-
-    1.upto(nb_threads) do |i|
-      threads << Thread.new do 
-        until queue.empty?
-          run_job queue
-        end
-      end
-    end
-
-    threads.each do |t| 
-      t.join 
-    end
-
+    queue.run()
   end
 end
 

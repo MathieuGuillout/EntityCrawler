@@ -18,7 +18,11 @@ class Processor
   end
 
   def Processor.text value, context = {}
-    value.gsub /[\-]*\t/, '. '
+    if not value.nil?
+      value.gsub /[\-]*\t/, '. '
+    else
+      nil
+    end
   end
 
   def Processor.url value, context = {}
