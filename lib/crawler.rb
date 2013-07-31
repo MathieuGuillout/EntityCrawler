@@ -53,7 +53,7 @@ class Crawler
         v = Crawler.post_process v, key, style, context
 
         entity[key] = v 
-        entity[key.to_s + "_cdn"] = Digest::MD5.hexdigest(v) if val.kind_of? OpenStruct and val["cdn"]
+        entity[key.to_s + "_cdn"] = Digest::MD5.hexdigest(v) if val.kind_of? OpenStruct and val["cdn"] and not v.nil?
       end
       entity = Helper.hashes_to_ostruct(entity)
       entity = Crawler.handlers entity, style, context
