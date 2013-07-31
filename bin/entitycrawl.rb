@@ -66,8 +66,16 @@ def crawl_website stylesheet_path, options
     queue = Queue.new
 
     jobs.each do |job| queue << job end
-  
-    1.upto(nb_threads) do
+
+    while (queue.length < nb_threads) do 
+      job = queue.pop()
+      job.perform()
+      job.new_jobs.each do |new_job| 
+        queue << new_job 
+      end
+    end
+
+    1.upto(nb_threads) do |i|
       threads << Thread.new do 
         until queue.empty?
           job = queue.pop()

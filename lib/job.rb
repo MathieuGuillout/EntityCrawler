@@ -98,6 +98,9 @@ class Job
 
 
   def perform(crawler=Crawler)
+
+    @new_jobs = []
+
     url = @details.url || @style[@entity_type].url
 
     #p url, @entity_type
