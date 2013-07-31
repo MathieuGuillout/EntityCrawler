@@ -78,8 +78,12 @@ def crawl_website stylesheet_path, options
     1.upto(nb_threads) do |i|
       threads << Thread.new do 
         until queue.empty?
-          job = queue.pop()
-          job.perform()
+          begin
+            job = queue.pop()
+            job.perform()
+          rescue Exception => ex
+            print "Exception", ex
+          end
           job.new_jobs.each do |new_job| 
             queue << new_job 
           end
