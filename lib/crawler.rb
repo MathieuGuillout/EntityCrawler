@@ -6,7 +6,7 @@ require_relative 'processor'
 class Crawler 
   @@handlers = {}
   def Crawler.get_attribute_value domElement, attribute, many = false, context = {}
-    if attribute.kind_of? String or attribute.kind_of? Fixnum
+    if attribute.kind_of? String or attribute.kind_of? Fixnum or attribute.nil?
       attribute 
     elsif attribute.const
       attribute.const
@@ -64,12 +64,16 @@ class Crawler
 
   def Crawler.extract_entities url, style, context = {}
 
+    entities = []
+
     if context.cookies
       cookie = ""
       Helper.ostructh(context.cookies).each do |key, val|
         cookie += "#{key}=#{val} ;"
       end
       context[:cookie] = cookie
+    else
+      context[:cookie] = ""
     end
 
     url = url.strip() if not url.nil?
@@ -77,7 +81,9 @@ class Crawler
       return []
     end
 
-    doc = Nokogiri::HTML(open(URI::encode(url), "Cookie" => context[:cookie]))
+    print "#{url}\n"
+    page = open(URI::encode(url), "Cookie" => context[:cookie])
+    doc = Nokogiri::HTML(page)
     entities = Crawler.extract_entities_page doc, style, context
     
     context[:nb_pages] = 0 if not context[:nb_pages]
@@ -89,10 +95,10 @@ class Crawler
       next_url = Crawler.extract_attribute doc, style.next_page.selector
       next_url = Crawler.post_process next_url, "next_page", style, context
       next_url = Processor.url next_url, { :url => url }
-      print "NEXT #{next_url}\n"
       
       entities += Crawler.extract_entities(next_url, style, context) if next_url != url
     end
+
 
     entities = entities.slice(0, style["max_number"]) if style["max_number"]
 
@@ -135,7 +141,8 @@ class Crawler
       processors += style.attributes[attribute].post_processors || []
     end
 
-    if (style[attribute] and style[attribute].post_processors)
+    if (style[attribute] and not( style[attribute].kind_of? String or style[attribute].kind_of? String ) and
+        style[attribute].post_processors)
       processors += style[attribute].post_processors
     end
 

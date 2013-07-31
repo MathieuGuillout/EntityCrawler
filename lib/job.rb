@@ -94,14 +94,13 @@ class Job
     if @cdn_config and CDN.has_a_job @style, @entity_type
       CDN.save @style, @entity_type, @entities, @cdn_config
     end
-
   end
 
 
   def perform(crawler=Crawler)
     url = @details.url || @style[@entity_type].url
 
-    p url, @entity_type
+    #p url, @entity_type
 
     context = @details
     context.path = @context.path if @context and @context.path
