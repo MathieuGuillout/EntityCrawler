@@ -1,6 +1,8 @@
 require 'pqueue'
 require_relative "graceful_quit"
 
+TMP_FILE = "tmp.data"
+
 class CrawlingQueue
     
   def initialize options
@@ -13,7 +15,14 @@ class CrawlingQueue
     @nb_extracted_entities = 0
     
     self.add_sites(options[:sites]) if options[:sites]
-    self.add_jobs(options[:jobs]) if options[:jobs]
+
+    jobs_to_resume = self.jobs_to_resume()
+
+    if jobs_to_resume.length > 0
+      self.add_jobs(jobs_to_resume)
+    else
+      self.add_jobs(options[:jobs]) if options[:jobs]
+    end
   end
 
   def add_site site_name
@@ -100,22 +109,41 @@ class CrawlingQueue
       i += 1
     end
 
-    if @nb_threads > 1 
-      1.upto(@nb_threads) do |i|
-        @threads << Thread.new do 
-          self.run_job(@queues.keys[i % @queues.keys.length]) until self.empty? or @stopping
-        end
-      end
-
-      @threads.each do |t| t.join end
-    else
-      i = 0
-      until self.empty? or @stopping
-        self.run_job(@queues.keys[i % @queues.keys.length])
-        i += 1
+    1.upto(@nb_threads) do |i|
+      @threads << Thread.new do 
+        self.run_job(@queues.keys[i % @queues.keys.length]) until self.empty? or @stopping
       end
     end
-    # TODO : Save the remaining jobs (if the program has been interrupted)
+
+    @threads.each do |t| t.join end
+
+    if @stopping
+      print "Saving jobs to resume ...\n"
+      File.open(TMP_FILE, "w") do |file|
+        jobs = []
+        @queues.each do |site, queue|
+          while not queue.empty? do
+            job = queue.pop()
+            jobs << job
+          end
+        end
+        Marshal.dump(jobs, file)
+      end
+    end
+
+  end
+
+  def jobs_to_resume
+    jobs = [] 
+    if File.exists? TMP_FILE
+      File.open(TMP_FILE, "r") do |file|
+        print "Resuming jobs...\n"
+        jobs = Marshal.load(file) 
+        print "#{jobs.length} jobs to resume ...\n"
+        File.delete(TMP_FILE)
+      end
+    end
+    jobs
   end
 
   def stop_gracefully
