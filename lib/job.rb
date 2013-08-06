@@ -8,21 +8,27 @@ require_relative "cdn"
 require_relative "helper"
 
 class Job
-  attr_reader :entities, :new_jobs, :entity_type, :export_results, :details, :style, :context
-  attr_accessor :options, :failures, :level
+  attr_reader :entities, 
+              :new_jobs, 
+              :entity_type, 
+              :export_results, 
+              :details, 
+              :style, 
+              :context, 
+              :site_name
 
+  attr_accessor :options, 
+                :failures, 
+                :level
 
   @queue = :crawl_page
 
-  def initialize entity_type, details, style, context = OpenStruct.new, options = OpenStruct.new
+  def initialize entity_type, details, site_name, context = OpenStruct.new, options = OpenStruct.new
     @entity_type = entity_type
     @details = details
     @crawl_timestamp = details.crawl_timestamp
-    @style = style
+    @site_name = site_name
     @context = context
-    @export_results = (@style[entity_type] and @style[entity_type].save) ? true : false
-    @handle_diffs   = @style[entity_type].handle_diffs || false
-    @cdn_config     = @style["site"]["cdn"] || false
     @level = 0
     @entities = []
     @jobs = []
@@ -36,7 +42,7 @@ class Job
       @style[@entity_type].jobs ||= []
       @style[@entity_type].jobs.each do |next_entity_type|
         entity.crawl_timestamp = @crawl_timestamp
-        job = Job.new(next_entity_type, entity, @style, @context, @options)
+        job = Job.new(next_entity_type, entity, @site_name, @context, @options)
         job.level = @level + 1
         jobs << job
       end
@@ -57,7 +63,7 @@ class Job
       target_url = url.gsub regex_iterator, it.to_s
       details = @details.clone
       details.url = target_url
-      jobs << Job.new(@entity_type, details, @style, @context, @options)
+      jobs << Job.new(@entity_type, details, @site_name, @context, @options)
     end
 
     @new_jobs = jobs
@@ -101,13 +107,20 @@ class Job
   end
 
 
-  def perform(crawler=Crawler)
+  def load_style(style_factory)
+    @style = style_factory.load(@site_name)
+    @export_results = (@style[entity_type] and @style[entity_type].save) ? true : false
+    @handle_diffs   = @style[entity_type].handle_diffs || false
+    @cdn_config     = @style["site"]["cdn"] || false
+  end
+
+  def perform(crawler=Crawler, style_factory)
 
     @new_jobs = []
 
-    url = @details.url || @style[@entity_type].url
+    self.load_style(style_factory)
 
-    #p url, @entity_type
+    url = @details.url || @style[@entity_type].url
 
     context = @details
     context.path = @context.path if @context and @context.path

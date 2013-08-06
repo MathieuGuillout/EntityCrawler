@@ -12,6 +12,6 @@ class Site
 
   def crawl
     @style.site.attributes.crawl_timestamp = Time.now.to_i
-    [ Job.new("site", @style.site.attributes, @style, @context) ]
+    [ Job.new("site", @style.site.attributes, @style.site.attributes.site_name.const, @context) ]
   end
 end

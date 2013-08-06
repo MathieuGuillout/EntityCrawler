@@ -4,6 +4,7 @@ require 'resque'
 require_relative '../lib/site'
 require_relative '../lib/helper'
 require_relative '../lib/crawling_queue'
+require_relative '../lib/style_factory'
 
 program :name, 'entitycrawl'
 program :version, '0.0.1'
@@ -81,12 +82,15 @@ def crawl_website stylesheet_path, options
   # If run in local threads mode
   # We just do all those jobs now with multiple threads
   else
-    
+   
+    style_factory = StyleFactory.new(stylesheet_path)
+
     nb_threads = if options.threads then options.threads.to_i else 1 end
     queue = CrawlingQueue.new(
       :nb_threads => nb_threads,
       :sites => sites,
-      :jobs  => jobs
+      :jobs  => jobs,
+      :style_factory => style_factory
     )
 
     queue.run()

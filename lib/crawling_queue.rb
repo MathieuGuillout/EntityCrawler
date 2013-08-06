@@ -8,6 +8,7 @@ class CrawlingQueue
     @threads = []
     @nb_threads = options[:nb_threads]
     @stopping = false
+    @style_factory = options[:style_factory]
 
     @nb_extracted_entities = 0
     
@@ -32,8 +33,7 @@ class CrawlingQueue
   end
 
   def add_job job
-    site_name = job.style.site.attributes.site_name.const
-    @queues[site_name] << job 
+    @queues[job.site_name] << job 
   end
 
   def find_job site_name
@@ -71,7 +71,7 @@ class CrawlingQueue
   def run_job site_name
     begin 
       job = self.find_job site_name
-      job.perform()
+      job.perform(@style_factory)
       
       @nb_extracted_entities += job.entities.length
 
