@@ -24,7 +24,6 @@ class StyleFactory
   end
 
   def load(site_name)
-    p site_name
     @stylesheets[site_name]
   end
 
