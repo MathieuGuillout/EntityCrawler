@@ -1,9 +1,13 @@
+require 'pqueue'
+require_relative "graceful_quit"
+
 class CrawlingQueue
     
   def initialize options
     @queues = {}
     @threads = []
     @nb_threads = options[:nb_threads]
+    @stopping = false
 
     @nb_extracted_entities = 0
     
@@ -12,7 +16,9 @@ class CrawlingQueue
   end
 
   def add_site site_name
-    @queues[site_name] = Queue.new
+    @queues[site_name] = PQueue.new() { |job_1, job_2| 
+      job_1.level > job_2.level  
+    }
   end
 
   def add_sites sites
@@ -46,7 +52,6 @@ class CrawlingQueue
       print "#{k} : #{q.length} | "
     end
     print "\n"
-    print "Nb extracted: #{@nb_extracted_entities}\n"
   end
 
   def empty?
@@ -85,18 +90,42 @@ class CrawlingQueue
   end
 
   def run
+    trap('INT') {
+      self.stop_gracefully()
+    }
+
     i = 0
     while self.length < @nb_threads do 
       self.run_job @queues.keys[i % @queues.keys.length] 
       i += 1
     end
 
-    1.upto(@nb_threads) do |i|
-      @threads << Thread.new do 
-        self.run_job(@queues.keys[i % @queues.keys.length]) until self.empty?
+    if @nb_threads > 1 
+      1.upto(@nb_threads) do |i|
+        @threads << Thread.new do 
+          self.run_job(@queues.keys[i % @queues.keys.length]) until self.empty? or @stopping
+        end
+      end
+
+      @threads.each do |t| t.join end
+    else
+      i = 0
+      until self.empty? or @stopping
+        self.run_job(@queues.keys[i % @queues.keys.length])
+        i += 1
       end
     end
-
-    @threads.each do |t| t.join end
+    # TODO : Save the remaining jobs (if the program has been interrupted)
   end
+
+  def stop_gracefully
+    if @stopping
+      print "Force exit ...\n"
+      exit
+    else
+      @stopping = true
+      print "Stopping gracefully ...\n"
+    end
+  end
+
 end

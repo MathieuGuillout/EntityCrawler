@@ -53,7 +53,7 @@ def crawl_website stylesheet_path, options
  
  
   sites = []
-  if options.folder
+  if Dir.exists? stylesheet_path 
     Dir.entries(stylesheet_path).each do |stylesheet|
       if stylesheet.match /yaml$/
         site = Site.new(File.join(stylesheet_path, stylesheet))
@@ -80,10 +80,11 @@ def crawl_website stylesheet_path, options
 
   # If run in local threads mode
   # We just do all those jobs now with multiple threads
-  elsif options.threads
+  else
     
+    nb_threads = if options.threads then options.threads.to_i else 1 end
     queue = CrawlingQueue.new(
-      :nb_threads => options.threads.to_i,
+      :nb_threads => nb_threads,
       :sites => sites,
       :jobs  => jobs
     )

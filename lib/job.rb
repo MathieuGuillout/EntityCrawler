@@ -9,7 +9,7 @@ require_relative "helper"
 
 class Job
   attr_reader :entities, :new_jobs, :entity_type, :export_results, :details, :style, :context
-  attr_accessor :options, :failures
+  attr_accessor :options, :failures, :level
 
 
   @queue = :crawl_page
@@ -23,6 +23,7 @@ class Job
     @export_results = (@style[entity_type] and @style[entity_type].save) ? true : false
     @handle_diffs   = @style[entity_type].handle_diffs || false
     @cdn_config     = @style["site"]["cdn"] || false
+    @level = 0
     @entities = []
     @jobs = []
     @options = options
@@ -35,7 +36,9 @@ class Job
       @style[@entity_type].jobs ||= []
       @style[@entity_type].jobs.each do |next_entity_type|
         entity.crawl_timestamp = @crawl_timestamp
-        jobs << Job.new(next_entity_type, entity, @style, @context, @options)
+        job = Job.new(next_entity_type, entity, @style, @context, @options)
+        job.level = @level + 1
+        jobs << job
       end
     end
     jobs
