@@ -89,7 +89,7 @@ class Job
     @entities = @entities[@offset, NB_MAX_ENTITIES_PER_CRAWL]
 
     repage_job = nil
-    if @entities.length == NB_MAX_ENTITIES_PER_CRAWL
+    if not @entities.nil? and @entities.length == NB_MAX_ENTITIES_PER_CRAWL
       repage_job = self.clone()
       repage_job.clean()
       repage_job.offset += NB_MAX_ENTITIES_PER_CRAWL
