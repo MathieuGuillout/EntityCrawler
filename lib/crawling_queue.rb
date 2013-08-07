@@ -88,9 +88,13 @@ class CrawlingQueue
         @queues[job_site_name(job)] << new_job 
       end
     rescue => ex
-      print "Exception : #{ex}\n" 
-      ex.backtrace.each do |row|
-        print row, "\n"
+
+      if ex.class != OpenURI::HTTPError
+        p ex.class
+        print "Exception : #{ex}\n" 
+        ex.backtrace.each do |row|
+          print row, "\n"
+        end
       end
 
       job.failures += 1
@@ -124,6 +128,7 @@ class CrawlingQueue
         @queues.each do |site, queue|
           while not queue.empty? do
             job = queue.pop()
+            job.clean() # So as to we can serialize it
             jobs << job
           end
         end

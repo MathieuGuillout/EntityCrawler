@@ -163,4 +163,7 @@ class Job
     @new_jobs.each do |job| job.queue_me() end
   end
 
+  def clean
+    @entities = []
+  end
 end
