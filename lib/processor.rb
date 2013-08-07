@@ -26,7 +26,8 @@ class Processor
   end
 
   def Processor.url value, context = {}
-    val = value.strip()
+    val = value.strip() if not value.nil?
+
     if not val.nil? and not(val.match(/^http/)) and context[:url]
       if val.match /^\//
         link = val
