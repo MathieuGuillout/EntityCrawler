@@ -7,7 +7,7 @@ require_relative "crawler"
 require_relative "cdn"
 require_relative "helper"
 
-NB_MAX_ENTITIES_PER_CRAWL = 100
+NB_MAX_ENTITIES_PER_CRAWL = 20
 
 class Job
   attr_reader :entities, 
