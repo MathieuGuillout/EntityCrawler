@@ -24,9 +24,7 @@ class CrawlingQueue
   end
 
   def add_site site_name
-    @queues[site_name] = PQueue.new() { |job_1, job_2| 
-      job_1.level < job_2.level  
-    }
+    @queues[site_name] = PQueue.new() { |j, k| j.level > k.level }
   end
 
   def add_sites sites
