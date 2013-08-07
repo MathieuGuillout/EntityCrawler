@@ -26,9 +26,9 @@ class Processor
   end
 
   def Processor.url value, context = {}
-    val = value
-    if not value.nil? and not(value.match(/^http/)) and context[:url]
-      if value.match /^\//
+    val = value.strip()
+    if not val.nil? and not(val.match(/^http/)) and context[:url]
+      if val.match /^\//
         link = val
         d = Domainatrix.parse context[:url]
         val = "http://#{d.subdomain}.#{d.domain}.#{d.public_suffix}#{link}"

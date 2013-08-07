@@ -88,20 +88,16 @@ class Crawler
     context[:nb_pages] = 0 if not context[:nb_pages]
     context[:nb_pages] += 1
 
-    if style.next_page and
-       (not(style.next_page.max_number) or context[:nb_pages] < style.next_page.max_number) 
-       
+    if style.next_page
       next_url = Crawler.extract_attribute doc, style.next_page.selector
-      next_url = Crawler.post_process next_url, "next_page", style, context
-      next_url = Processor.url next_url, { :url => url }
-      
-      entities += Crawler.extract_entities(next_url, style, context) if next_url != url
+
+      if next_url 
+        next_url = Crawler.post_process next_url, "next_page", style, context
+        next_url = Processor.url next_url, { :url => url }
+        entities += Crawler.extract_entities(next_url, style, context) if next_url != url
+      end
     end
 
-
-    entities = entities.slice(0, style["max_number"]) if style["max_number"]
-
-    #entities.each do |e| ap Helper.ostructh(e) end
     entities
   end
 

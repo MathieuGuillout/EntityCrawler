@@ -137,32 +137,6 @@ class Job
 
   end
 
-
-  def self.perform *args 
-    args_instance = args.map do |a| (a.class == Hash) ? Helper.hostruct(a) : a end
-    instance = new(*args_instance)
-    instance.resque_perform()
-  end
-
-  def resque_perform(crawler=Crawler)
-    perform(crawler)
-    queue_new_jobs()
-  end
-   
-  def queue_me
-    Resque.enqueue(Job, 
-                   @entity_type, 
-                   Helper.ostructh(@details), 
-                   Helper.ostructh(@style), 
-                   Helper.ostructh(@context), 
-                   Helper.ostructh(@options)
-                   )
-  end
-
-  def queue_new_jobs
-    @new_jobs.each do |job| job.queue_me() end
-  end
-
   def clean
     @entities = []
   end

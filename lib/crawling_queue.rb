@@ -11,8 +11,6 @@ class CrawlingQueue
     @nb_threads = options[:nb_threads]
     @stopping = false
     @style_factory = options[:style_factory]
-
-    @nb_extracted_entities = 0
     
     self.add_sites(options[:sites]) if options[:sites]
 
@@ -27,7 +25,7 @@ class CrawlingQueue
 
   def add_site site_name
     @queues[site_name] = PQueue.new() { |job_1, job_2| 
-      job_1.level > job_2.level  
+      job_1.level < job_2.level  
     }
   end
 
@@ -81,8 +79,6 @@ class CrawlingQueue
     begin 
       job = self.find_job site_name
       job.perform(@style_factory)
-      
-      @nb_extracted_entities += job.entities.length
 
       job.new_jobs.each do |new_job| 
         @queues[job_site_name(job)] << new_job 
