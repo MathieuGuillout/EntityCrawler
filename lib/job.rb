@@ -131,7 +131,8 @@ class Job
   def load_style(style_factory)
     @style = style_factory.load(@site_name)
     @export_results = (@style[entity_type] and @style[entity_type].save) ? true : false
-    @handle_diffs   = @style[entity_type].handle_diffs || false
+    #@handle_diffs   = @style[entity_type].handle_diffs || false
+    @handle_diffs   = false
     @cdn_config     = @style["site"]["cdn"] || false
   end
 
