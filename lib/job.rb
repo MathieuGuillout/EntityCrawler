@@ -76,7 +76,7 @@ class Job
     context = @details
     context.cookies = @style["site"].cookies
 
-    @entities = crawler.extract_entities url, @style[@entity_type], context
+    next_url, @entities = crawler.extract_entities url, @style[@entity_type], context
 
     @entities = @entities.map do |entity| 
       entity.crawl_timestamp = @crawl_timestamp
@@ -84,6 +84,14 @@ class Job
     end
 
     @new_jobs = new_jobs_for @entities
+
+    if not next_url.nil?
+      new_job = self.clone()
+      new_job.clean()
+      new_job.details.url = next_url
+      @new_jobs << new_job
+    end
+
 
     # If no style on the command line, but style from the stylesheet
     if not @options.export and @style["site"]["export"] 
