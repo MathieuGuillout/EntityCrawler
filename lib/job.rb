@@ -7,6 +7,8 @@ require_relative "crawler"
 require_relative "cdn"
 require_relative "helper"
 
+NB_MAX_ENTITIES_PER_CRAWL = 200
+
 class Job
   attr_reader :entities, 
               :new_jobs, 
@@ -19,9 +21,9 @@ class Job
 
   attr_accessor :options, 
                 :failures, 
-                :level
+                :level,
+                :offset
 
-  @queue = :crawl_page
 
   def initialize entity_type, details, site_name, context = OpenStruct.new, options = OpenStruct.new
     @entity_type = entity_type
@@ -30,6 +32,7 @@ class Job
     @site_name = site_name
     @context = context
     @level = 0
+    @offset = 0
     @entities = []
     @jobs = []
     @options = options
@@ -83,7 +86,17 @@ class Job
       entity
     end
 
+    @entities = @entities[@offset, NB_MAX_ENTITIES_PER_CRAWL]
+
+    repage_job = nil
+    if @entities.length == NB_MAX_ENTITIES_PER_CRAWL
+      repage_job = self.clone()
+      repage_job.clean()
+      repage_job.offset += NB_MAX_ENTITIES_PER_CRAWL
+    end
+
     @new_jobs = new_jobs_for @entities
+    @new_jobs << repage_job if not repage_job.nil?
 
     if not next_url.nil?
       new_job = self.clone()

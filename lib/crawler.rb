@@ -85,11 +85,9 @@ class Crawler
     doc = Nokogiri::HTML(page)
     entities = Crawler.extract_entities_page doc, style, context
     
-    context[:nb_pages] = 0 if not context[:nb_pages]
-    context[:nb_pages] += 1
 
+    # Pagination handling
     next_url = nil
-
     if style.next_page
       next_url = Crawler.extract_attribute doc, style.next_page.selector
 
@@ -97,7 +95,6 @@ class Crawler
         next_url = Crawler.post_process next_url, "next_page", style, context
         next_url = Processor.url next_url, { :url => url }
         next_url = nil if next_url == url
-        #entities += Crawler.extract_entities(next_url, style, context) if next_url != url
       end
     end
 
