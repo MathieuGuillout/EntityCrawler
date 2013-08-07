@@ -41,13 +41,15 @@ class Job
 
   def new_jobs_for entities
     jobs = []
-    entities.each do |entity|
-      @style[@entity_type].jobs ||= []
-      @style[@entity_type].jobs.each do |next_entity_type|
-        entity.crawl_timestamp = @crawl_timestamp
-        job = Job.new(next_entity_type, entity, @site_name, @context, @options)
-        job.level = @level + 1
-        jobs << job
+    if not entities.nil?
+      entities.each do |entity|
+        @style[@entity_type].jobs ||= []
+        @style[@entity_type].jobs.each do |next_entity_type|
+          entity.crawl_timestamp = @crawl_timestamp
+          job = Job.new(next_entity_type, entity, @site_name, @context, @options)
+          job.level = @level + 1
+          jobs << job
+        end
       end
     end
     jobs
