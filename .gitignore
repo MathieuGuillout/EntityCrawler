@@ -3,3 +3,4 @@ samples
 *.swp
 .DS_Store
 quality_check/node_modules/
+tmp.data
