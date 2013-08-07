@@ -161,5 +161,6 @@ class Job
 
   def clean
     @entities = []
+    @new_jobs = []
   end
 end

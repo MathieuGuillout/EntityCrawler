@@ -97,9 +97,7 @@ class CrawlingQueue
   end
 
   def run
-    trap('INT') {
-      self.stop_gracefully()
-    }
+    trap('INT') { self.stop_gracefully() }
 
     i = 0
     while self.length < @nb_threads do 
