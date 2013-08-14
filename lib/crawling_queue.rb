@@ -110,7 +110,7 @@ class CrawlingQueue
         self.run_job(@queues.keys[i % @queues.keys.length]) until self.empty? or @stopping
       end
     end
-
+     
     @threads.each do |t| t.join end
 
     if @stopping

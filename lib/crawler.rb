@@ -2,6 +2,7 @@ require "open-uri"
 require 'digest/md5'
 require_relative 'helper'
 require_relative 'processor'
+require_relative 'classical_crawler'
 
 class Crawler 
   @@handlers = {}
@@ -41,7 +42,9 @@ class Crawler
     many ? values : values.first
   end
 
+
   def Crawler.extract_entities_page doc, style, context = {}
+    
     entities = []
     root_elements = (style.selector.nil? || style.selector.empty?) ? [doc] : doc.css(style.selector) 
     root_elements.each do |domElement|
@@ -59,13 +62,16 @@ class Crawler
       entity = Crawler.handlers entity, style, context
       entities << entity
     end
+    
     entities
   end
 
   def Crawler.extract_entities url, style, context = {}
 
     entities = []
+    links = []
 
+    context[:url] = url 
     if context.cookies
       cookie = ""
       Helper.ostructh(context.cookies).each do |key, val|
@@ -83,7 +89,12 @@ class Crawler
 
     page = open(URI::encode(url), "Cookie" => context[:cookie])
     doc = Nokogiri::HTML(page)
-    entities = Crawler.extract_entities_page doc, style, context
+    if style.urls_to_follow
+      cr = ClassicalCrawler.new url, style
+      cr.run()
+    else
+      entities = Crawler.extract_entities_page doc, style, context
+    end
     
 
     # Pagination handling
@@ -98,7 +109,7 @@ class Crawler
       end
     end
 
-    [ next_url, entities ]
+    [ next_url, entities, links ]
   end
 
   def Crawler.get_handler handler_class, context

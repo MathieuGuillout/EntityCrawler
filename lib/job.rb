@@ -78,11 +78,13 @@ class Job
 
     url = @details.url || @style[@entity_type].url
 
-    context = @details
-    context.cookies = @style["site"].cookies
+    ctx = @details
+    ctx.cookies = @style["site"].cookies
 
-    next_url, @entities = crawler.extract_entities url, @style[@entity_type], context
+    next_url, @entities, links = crawler.extract_entities url, @style[@entity_type], ctx 
 
+    p links
+    @entities = [] if @entities.nil?
     @entities = @entities.map do |entity| 
       entity.crawl_timestamp = @crawl_timestamp
       entity
