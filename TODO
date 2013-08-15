@@ -1,0 +1,11 @@
+Ce que je veux faire ? 
+
+C'est amener le crawler classique dans la meme structure que l'autre methode. Pourquoi ? 
+- Pour pouvoir benificier de l'arret / reprise du crawl 
+- Pour ne pas retomber dans les meme problemes, trop de jobs mis dans les files d'attente
+- Pour pouvoir faire du multi thread sur le meme site. 
+
+De quelle structure supplementaire ai je besoin ? 
+
+- D'un tableau d'urls deja visitees. Pour ne pas les rajouter comme un nouveau job. Un tableau par site, (peut etre de hash pour avoir une taille constante par url, meme un index peut etre pour etre plus rapide)
+

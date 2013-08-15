@@ -1,6 +1,7 @@
 Gemfile.lock
 samples
 *.swp
+*.swo
 .DS_Store
 quality_check/node_modules/
 tmp.data

@@ -55,6 +55,20 @@ class Job
     jobs
   end
 
+  def new_jobs_for_links links
+    jobs = []
+    if not links.nil?
+      links.each do |link|
+        link[:crawl_timestamp] = @crawl_timestamp
+        details = Helper.hostruct(link)
+        job = Job.new(link[:type], details, @site_name, @context, @options)
+        job.level = link[:type] == "site" ? 0 : 1
+        jobs << job
+      end
+    end
+    jobs
+  end
+
   def iterations 
     url = @details.url || @style[@entity_type].url
 
@@ -77,13 +91,13 @@ class Job
   def extraction(crawler=Crawler)
 
     url = @details.url || @style[@entity_type].url
+    p url
 
     ctx = @details
     ctx.cookies = @style["site"].cookies
 
     next_url, @entities, links = crawler.extract_entities url, @style[@entity_type], ctx 
 
-    p links
     @entities = [] if @entities.nil?
     @entities = @entities.map do |entity| 
       entity.crawl_timestamp = @crawl_timestamp
@@ -108,6 +122,8 @@ class Job
       new_job.details.url = next_url
       @new_jobs << new_job
     end
+
+    @new_jobs += new_jobs_for_links links
 
 
     # If no style on the command line, but style from the stylesheet

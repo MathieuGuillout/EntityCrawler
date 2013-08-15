@@ -90,8 +90,8 @@ class Crawler
     page = open(URI::encode(url), "Cookie" => context[:cookie])
     doc = Nokogiri::HTML(page)
     if style.urls_to_follow
-      cr = ClassicalCrawler.new url, style
-      cr.run()
+      ca = ClassicalCrawler.new url, style
+      links = ca.run()
     else
       entities = Crawler.extract_entities_page doc, style, context
     end
