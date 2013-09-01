@@ -1,4 +1,5 @@
 require 'pqueue'
+require 'set'
 require_relative "graceful_quit"
 
 TMP_FILE = "tmp.data"
@@ -7,6 +8,7 @@ class CrawlingQueue
     
   def initialize options
     @queues = {}
+    @visited = {}
     @threads = []
     @nb_threads = options[:nb_threads]
     @stopping = false
@@ -25,6 +27,7 @@ class CrawlingQueue
 
   def add_site site_name
     @queues[site_name] = PQueue.new() { |j, k| j.level > k.level }
+    @visited[site_name] = Set.new()
   end
 
   def add_sites sites
@@ -77,10 +80,12 @@ class CrawlingQueue
     begin 
       job = self.find_job site_name
       job.perform(@style_factory)
+      @visited[job.site_name].add(Digest::MD5.hexdigest(job.details.url))
 
       job.new_jobs.each do |new_job| 
         @queues[job_site_name(job)] << new_job 
       end
+
     rescue => ex
 
       if ex.class != OpenURI::HTTPError
