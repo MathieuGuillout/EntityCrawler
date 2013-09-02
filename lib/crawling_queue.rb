@@ -80,17 +80,22 @@ class CrawlingQueue
   def run_job site_name
     begin 
       job = self.find_job site_name
-      job.perform(@style_factory)
-      @visited[job.site_name].add(job.details.url)
 
-      job.new_jobs.each do |new_job| 
-        already_visited = @visited[job.site_name].include? new_job.details.url
-        @queues[job.site_name] << new_job if not already_visited
+      if not @visited[job.site_name].include? job.details.url
+
+        job.perform(@style_factory)
+        @visited[job.site_name].add(job.details.url)
+
+        job.new_jobs.each do |new_job| 
+          already_visited = @visited[job.site_name].include? new_job.details.url
+          @queues[job.site_name] << new_job if not already_visited
+        end
+
       end
 
     rescue => ex
 
-      if ex.class != OpenURI::HTTPError
+      if ex.class != OpenURI::HTTPError and not ex.to_s.match /redirection/
         p ex.class
         print "Exception : #{ex}\n" 
         ex.backtrace.each do |row|
