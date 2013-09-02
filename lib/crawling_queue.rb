@@ -14,10 +14,10 @@ class CrawlingQueue
     @stopping = false
     @style_factory = options[:style_factory]
     
+    @visited = self.urls_visited_to_resume()
     self.add_sites(options[:sites]) if options[:sites]
 
     jobs_to_resume = self.jobs_to_resume()
-    @visited = self.urls_visited_to_resume()
 
     if jobs_to_resume.length > 0
       self.add_jobs(jobs_to_resume)
@@ -28,7 +28,7 @@ class CrawlingQueue
 
   def add_site site_name
     @queues[site_name] = PQueue.new() { |j, k| j.level > k.level }
-    @visited[site_name] = Set.new()
+    @visited[site_name] = Set.new() if @visited[site_name].nil?
   end
 
   def add_sites sites
