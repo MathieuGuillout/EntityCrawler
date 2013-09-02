@@ -24,11 +24,13 @@ class ClassicalCrawler
     extracted_links = []
     @regex_links.each do |reg|
       extracted_links += links.find_all{ |l| not l.nil? and l.match reg }
-                    .map{ |l| { :url => l, :type => "site" } }
+                              .uniq
+                              .map{ |l| { :url => l, :type => "site" } }
     end
 
     @regex_jobs.each do |reg|
       extracted_links += links.find_all{ |l| not l.nil? and l.match reg.regex }
+                              .uniq
                               .map{ |l| { :url => l, :type => reg.job } }
     end
     

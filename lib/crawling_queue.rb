@@ -17,6 +17,7 @@ class CrawlingQueue
     self.add_sites(options[:sites]) if options[:sites]
 
     jobs_to_resume = self.jobs_to_resume()
+    @visited = self.urls_visited_to_resume()
 
     if jobs_to_resume.length > 0
       self.add_jobs(jobs_to_resume)
@@ -80,10 +81,11 @@ class CrawlingQueue
     begin 
       job = self.find_job site_name
       job.perform(@style_factory)
-      @visited[job.site_name].add(Digest::MD5.hexdigest(job.details.url))
+      @visited[job.site_name].add(job.details.url)
 
       job.new_jobs.each do |new_job| 
-        @queues[job_site_name(job)] << new_job 
+        already_visited = @visited[job.site_name].include? new_job.details.url
+        @queues[job.site_name] << new_job if not already_visited
       end
 
     rescue => ex
@@ -129,7 +131,14 @@ class CrawlingQueue
             jobs << job
           end
         end
+
+
         Marshal.dump(jobs, file)
+      end
+
+      print "Saving visited urls ...\n"
+      File.open("#{TMP_FILE}.visited", "w") do |file|
+        Marshal.dump(@visited, file)
       end
     end
 
@@ -147,6 +156,20 @@ class CrawlingQueue
     end
     jobs
   end
+
+  def urls_visited_to_resume
+    result = {}
+    if File.exists? "#{TMP_FILE}.visited"
+      File.open("#{TMP_FILE}.visited", "r") do |file|
+        print "Resuming visited urls...\n"
+        result = Marshal.load(file)
+        print result
+        File.delete("#{TMP_FILE}.visited")
+      end
+    end
+    result
+  end
+
 
   def stop_gracefully
     if @stopping

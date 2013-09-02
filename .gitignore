@@ -5,3 +5,4 @@ samples
 .DS_Store
 quality_check/node_modules/
 tmp.data
+tmp.data.visited
