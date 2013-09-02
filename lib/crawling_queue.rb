@@ -163,7 +163,6 @@ class CrawlingQueue
       File.open("#{TMP_FILE}.visited", "r") do |file|
         print "Resuming visited urls...\n"
         result = Marshal.load(file)
-        print result
         File.delete("#{TMP_FILE}.visited")
       end
     end

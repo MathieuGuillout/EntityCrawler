@@ -19,9 +19,14 @@ module EntityCrawl
       @@db = MongoClient.new(server, 27017, :pool_size => 10, :pool_timeout => 10).db(db_name)
     end
 
-    def MongoExport.save entities, entity_type, params = ""
+    def MongoExport.save i_entities, entity_type, params = ""
       MongoExport.connect(params) if @@db.nil?
-      
+     
+     
+      entities = i_entities.find_all { |e|
+        not e.title.nil? and not e.price.nil? 
+      }
+
       collection_name = "#{entity_type}s"
       collection = @@db.collection(collection_name)
 
