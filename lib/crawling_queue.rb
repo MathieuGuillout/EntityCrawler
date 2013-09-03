@@ -2,6 +2,8 @@ require 'set'
 require "open-uri"
 require "pqueue"
 require 'ostruct'
+require 'bloomfilter-rb'
+
 require_relative "graceful_quit"
 require_relative "job_description"
 require_relative "job"
@@ -33,7 +35,8 @@ class CrawlingQueue
 
   def add_site site_name
     @queues[site_name] = PQueue.new() { |a, b| a.level > b.level }
-    @visited[site_name] = Set.new() if @visited[site_name].nil?
+    @visited[site_name] = BloomFilter::Native.new(:size => 100, :hashes => 2, :seed => 1, :bucket => 3, :raise => false) if @visited[site_name].nil?
+    #Set.new() if @visited[site_name].nil?
   end
 
   def add_sites sites
@@ -65,10 +68,6 @@ class CrawlingQueue
     @queues.each do |k, q| 
       print "#{k} : #{q.length} | "
     end
-    len = 0
-    @visited.each {|k, v| len += v.length }
-    print "\n"
-    print "Visited links: #{len}"
     print "\n"
   end
 
@@ -99,7 +98,7 @@ class CrawlingQueue
 
         job.perform(@style_factory)
 
-        @visited[job_description.site].add(job_description.url)
+        @visited[job_description.site].insert(job_description.url)
         
         job.new_jobs.each do |new_job| 
           already_visited = @visited[job.site_name].include? new_job.url
