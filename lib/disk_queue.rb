@@ -1,7 +1,7 @@
 class DiskQueue
 
     DEFAULT_OPTIONS = {
-        memory_buffer: 1_000
+        memory_buffer: 100
     }
 
    def initialize( options = {} )

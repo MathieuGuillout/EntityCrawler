@@ -2,6 +2,8 @@ require 'set'
 require "open-uri"
 require "pqueue"
 require 'ostruct'
+require 'bloom-filter'
+
 require_relative "graceful_quit"
 require_relative "disk_queue"
 require_relative "job_description"
@@ -37,8 +39,10 @@ class CrawlingQueue
   def add_site site_name
     @queues[site_name] = DiskQueue.new()
     @pqueues[site_name] = DiskQueue.new()
-
-    @visited[site_name] = Set.new() if @visited[site_name].nil?
+  
+    if @visited[site_name].nil?
+      @visited[site_name] = BloomFilter.new size: 100_000, error_rate: 0.01
+    end
   end
 
   def add_sites sites
@@ -109,7 +113,7 @@ class CrawlingQueue
 
         job.perform(@style_factory)
 
-        @visited[job_description.site].add(job_description.url)
+        @visited[job_description.site].insert(job_description.url)
         
         job.new_jobs.each do |new_job| 
           already_visited = @visited[job.site_name].include? new_job.url
