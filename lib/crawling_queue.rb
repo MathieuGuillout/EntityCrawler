@@ -35,7 +35,7 @@ class CrawlingQueue
 
   def add_site site_name
     @queues[site_name] = PQueue.new() { |a, b| a.level > b.level }
-    @visited[site_name] = BloomFilter::Native.new(:size => 100, :hashes => 2, :seed => 1, :bucket => 3, :raise => false) if @visited[site_name].nil?
+    @visited[site_name] = BloomFilter::Native.new(:size => 50000, :hashes => 20, :seed => 1, :bucket => 3, :raise => false) if @visited[site_name].nil?
     #Set.new() if @visited[site_name].nil?
   end
 
