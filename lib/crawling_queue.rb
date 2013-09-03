@@ -132,7 +132,7 @@ class CrawlingQueue
       end
 
       job_description.failures += 1
-      self.add_job(job_description) if job.failures < 3
+      self.add_job(job_description) if job_description.failures < 3
     end
   end
 
