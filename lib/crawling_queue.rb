@@ -18,7 +18,7 @@ class CrawlingQueue
     @stopping = false
     @style_factory = options[:style_factory]
     
-    @visited = self.urls_visited_to_resume()
+    #@visited = self.urls_visited_to_resume()
     self.add_sites(options[:sites]) if options[:sites]
 
     
@@ -67,7 +67,8 @@ class CrawlingQueue
     end
     len = 0
     @visited.each {|k, v| len += v.length }
-    print "\nVisited length: #{len}"
+    print "\n"
+    print "Visited links: #{len}"
     print "\n"
   end
 
@@ -102,7 +103,7 @@ class CrawlingQueue
         
         job.new_jobs.each do |new_job| 
           already_visited = @visited[job.site_name].include? new_job.url
-          self.add_job job_description if not already_visited
+          @queues[job_description.site] << new_job if not already_visited
         end
       end
 
@@ -117,7 +118,7 @@ class CrawlingQueue
       end
 
       job_description.failures += 1
-      self.add_job(job_description) if job.failures < 3
+      @queues[job_description.site] << job_description if job.failures < 3
     end
   end
 
