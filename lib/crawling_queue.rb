@@ -3,6 +3,7 @@ require "open-uri"
 require "pqueue"
 require 'ostruct'
 require 'bloom-filter'
+require 'bunny'
 
 require_relative "graceful_quit"
 require_relative "disk_queue"
@@ -11,11 +12,27 @@ require_relative "job"
 
 TMP_FILE = "tmp.data"
 
+class LinkConsumer < Bunny::Consumer
+  def cancelled?
+    @cancelled
+  end
+
+  def handle_cancellation(_)
+    @cancelled = true
+  end
+end
+
 class CrawlingQueue
     
   def initialize options
+    @channels = {}
     @queues = {}
-    @pqueues = {}
+
+    @conn = Bunny.new
+    @conn.start
+
+    @bunny_channel = @conn.create_channel
+    
 
     @visited = {}
     @threads = []
@@ -37,8 +54,11 @@ class CrawlingQueue
   end
 
   def add_site site_name
-    @queues[site_name] = DiskQueue.new()
-    @pqueues[site_name] = DiskQueue.new()
+    @channels[site_name] = @conn.create_channel
+
+    @queues[site_name] = @channels[site_name].queue(site_name, :durable => true, 
+                                                               :exclusive => false, 
+                                                               :auto_delete => true)
   
     if @visited[site_name].nil?
       @visited[site_name] = BloomFilter.new size: 100_000, error_rate: 0.01
@@ -56,25 +76,10 @@ class CrawlingQueue
   end
 
   def add_job job_description 
-    if job_description.type == "site"
-      @queues[job_description.site] << job_description 
-    else
-      @pqueues[job_description.site] << job_description 
-    end
+    msg = Marshal.dump(job_description)
+    @bunny_channel.default_exchange.publish(msg, :routing_key => job_description.site, 
+                                                 :priority => job_description.level)
   end
-
-  def find_job site_name
-    if not @pqueues[site_name].empty?
-      return @pqueues[site_name].pop()
-    elsif not @queues[site_name].empty?
-      return @queues[site_name].pop()
-    elsif
-      @queues.each do |site, queue|
-        return @queues[site].pop() if not queue.empty?
-      end
-    end
-  end
-
 
   def print!
     @queues.each do |k, q| 
@@ -100,9 +105,8 @@ class CrawlingQueue
     return len
   end
 
-  def run_job site_name
+  def run_job job_description
     begin 
-      job_description = self.find_job site_name
 
       if not @visited[job_description.site].include? job_description.url
 
@@ -139,15 +143,18 @@ class CrawlingQueue
   def run
     trap('INT') { self.stop_gracefully() }
 
-    i = 0
-    while self.length < @nb_threads do 
-      self.run_job @queues.keys[i % @queues.keys.length] 
-      i += 1
-    end
-
     1.upto(@nb_threads) do |i|
       @threads << Thread.new do 
-        self.run_job(@queues.keys[i % @queues.keys.length]) until self.empty? or @stopping
+        site_name = @queues.keys[i % @queues.keys.length]
+        q = @queues[site_name]
+        ch = @channels[site_name]
+        link_consumer = LinkConsumer.new(ch, q)
+
+        q.subscribe(:block => true) do |d, p, payload|
+          job_description = Marshal.load(payload)
+          self.run_job job_description
+        end
+
       end
     end
      
