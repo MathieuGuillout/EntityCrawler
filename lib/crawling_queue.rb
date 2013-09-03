@@ -13,6 +13,8 @@ class CrawlingQueue
     
   def initialize options
     @queues = {}
+    @pqueues = {}
+
     @visited = {}
     @threads = []
     @nb_threads = options[:nb_threads]
@@ -34,6 +36,8 @@ class CrawlingQueue
 
   def add_site site_name
     @queues[site_name] = DiskQueue.new()
+    @pqueues[site_name] = DiskQueue.new()
+
     @visited[site_name] = Set.new() if @visited[site_name].nil?
   end
 
@@ -48,13 +52,19 @@ class CrawlingQueue
   end
 
   def add_job job_description 
-    @queues[job_description.site] << job_description 
+    if job_description.type == "site"
+      @queues[job_description.site] << job_description 
+    else
+      @pqueues[job_description.site] << job_description 
+    end
   end
 
   def find_job site_name
-    if not @queues[site_name].empty?
+    if not @pqueues[site_name].empty?
+      return @pqueues[site_name].pop()
+    elsif not @queues[site_name].empty?
       return @queues[site_name].pop()
-    else
+    elsif
       @queues.each do |site, queue|
         return @queues[site].pop() if not queue.empty?
       end
@@ -64,7 +74,7 @@ class CrawlingQueue
 
   def print!
     @queues.each do |k, q| 
-      print "#{k} : #{q.length} | "
+      print "#{k} : #{q.size} | "
     end
     print "\n"
   end
@@ -72,6 +82,9 @@ class CrawlingQueue
   def empty?
     self.print!() if rand() > 0.95
     @queues.each do |key, queue|
+      return false if not queue.empty?
+    end
+    @pqueues.each do |key, queue|
       return false if not queue.empty?
     end
     return true
@@ -100,7 +113,7 @@ class CrawlingQueue
         
         job.new_jobs.each do |new_job| 
           already_visited = @visited[job.site_name].include? new_job.url
-          @queues[job_description.site] << new_job if not already_visited
+          self.add_job(new_job) if not already_visited
         end
       end
 
@@ -115,7 +128,7 @@ class CrawlingQueue
       end
 
       job_description.failures += 1
-      @queues[job_description.site] << job_description if job.failures < 3
+      self.add_job(job_description) if job.failures < 3
     end
   end
 
@@ -128,13 +141,9 @@ class CrawlingQueue
       i += 1
     end
 
-    if @nb_threads == 1
-      self.run_job(@queues.keys[i % @queues.keys.length]) until self.empty? or @stopping
-    else
-      1.upto(@nb_threads) do |i|
-        @threads << Thread.new do 
-          self.run_job(@queues.keys[i % @queues.keys.length]) until self.empty? or @stopping
-        end
+    1.upto(@nb_threads) do |i|
+      @threads << Thread.new do 
+        self.run_job(@queues.keys[i % @queues.keys.length]) until self.empty? or @stopping
       end
     end
      
