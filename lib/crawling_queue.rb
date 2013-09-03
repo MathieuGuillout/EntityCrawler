@@ -114,7 +114,7 @@ class CrawlingQueue
       end
 
       job_description.failures += 1
-      @queues[job_description.site] << job if job.failures < 3
+      @queues[job_description.site] << job_description if job.failures < 3
     end
   end
 
@@ -146,7 +146,6 @@ class CrawlingQueue
         @queues.each do |site, queue|
           while not queue.empty? do
             job = queue.pop()
-            job.clean() # So as to we can serialize it
             jobs << job
           end
         end
