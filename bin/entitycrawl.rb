@@ -66,35 +66,21 @@ def crawl_website stylesheet_path, options
   end
  
   sites.each do |site| 
-    jobs += site.crawl.map do |job|
-      job.options = Helper.hostruct({ :export => options.export, :to => options.to })
-      job
-    end
+    jobs += site.crawl
   end
 
-
-  # If runned in resque mode
-  # We just those jobs in resque
-  if options.resque
-
-    jobs.each do |job| job.queue_me() end
-
-  # If run in local threads mode
-  # We just do all those jobs now with multiple threads
-  else
    
-    style_factory = StyleFactory.new(stylesheet_path)
+  style_factory = StyleFactory.new(stylesheet_path)
 
-    nb_threads = if options.threads then options.threads.to_i else 1 end
-    queue = CrawlingQueue.new(
-      :nb_threads => nb_threads,
-      :sites => sites,
-      :jobs  => jobs,
-      :style_factory => style_factory
-    )
+  nb_threads = if options.threads then options.threads.to_i else 1 end
+  queue = CrawlingQueue.new(
+    :nb_threads => nb_threads,
+    :sites => sites,
+    :jobs  => jobs,
+    :style_factory => style_factory
+  )
 
-    queue.run()
-  end
+  queue.run()
 end
 
 

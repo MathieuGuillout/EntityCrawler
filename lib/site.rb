@@ -1,5 +1,5 @@
 require_relative "stylesheet"
-require_relative "job"
+require_relative "job_description"
 
 class Site
   attr_accessor :style, :context
@@ -12,6 +12,9 @@ class Site
 
   def crawl
     @style.site.attributes.crawl_timestamp = Time.now.to_i
-    [ Job.new("site", @style.site.attributes, @style.site.attributes.site_name.const, @context) ]
+    url = @style.site.attributes.url
+    site_name = @style.site.attributes.site_name.const
+
+    [ JobDescription.new(url, site_name, "site") ]
   end
 end

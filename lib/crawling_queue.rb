@@ -1,6 +1,10 @@
-require 'pqueue'
 require 'set'
+require "open-uri"
+require "pqueue"
+require 'ostruct'
 require_relative "graceful_quit"
+require_relative "job_description"
+require_relative "job"
 
 TMP_FILE = "tmp.data"
 
@@ -14,9 +18,10 @@ class CrawlingQueue
     @stopping = false
     @style_factory = options[:style_factory]
     
-    @visited = self.urls_visited_to_resume()
+    #@visited = self.urls_visited_to_resume()
     self.add_sites(options[:sites]) if options[:sites]
 
+    
     jobs_to_resume = self.jobs_to_resume()
 
     if jobs_to_resume.length > 0
@@ -27,7 +32,7 @@ class CrawlingQueue
   end
 
   def add_site site_name
-    @queues[site_name] = PQueue.new() { |j, k| j.level > k.level }
+    @queues[site_name] = PQueue.new() { |a, b| a.level > b.level }
     @visited[site_name] = Set.new() if @visited[site_name].nil?
   end
 
@@ -41,8 +46,8 @@ class CrawlingQueue
     jobs.each do |job| self.add_job(job) end
   end
 
-  def add_job job
-    @queues[job.site_name] << job 
+  def add_job job_description 
+    @queues[job_description.site] << job_description 
   end
 
   def find_job site_name
@@ -79,18 +84,23 @@ class CrawlingQueue
 
   def run_job site_name
     begin 
-      job = self.find_job site_name
+      job_description = self.find_job site_name
 
-      if not @visited[job.site_name].include? job.details.url
+      if not @visited[job_description.site].include? job_description.url
+
+        style = @style_factory.load(job_description.site)
+        job = Job.new(job_description.type, 
+                      OpenStruct.new(:url => job_description.url), 
+                      job_description.site)
 
         job.perform(@style_factory)
-        @visited[job.site_name].add(job.details.url)
 
+        @visited[job_description.site].add(job_description.url)
+        
         job.new_jobs.each do |new_job| 
-          already_visited = @visited[job.site_name].include? new_job.details.url
-          @queues[job.site_name] << new_job if not already_visited
+          already_visited = @visited[job.site_name].include? new_job.url
+          @queues[job_description.site] << new_job if not already_visited
         end
-
       end
 
     rescue => ex
@@ -103,8 +113,8 @@ class CrawlingQueue
         end
       end
 
-      job.failures += 1
-      @queues[job_site_name(job)] << job if job.failures < 3
+      job_description.failures += 1
+      @queues[job_description.site] << job if job.failures < 3
     end
   end
 
@@ -117,9 +127,13 @@ class CrawlingQueue
       i += 1
     end
 
-    1.upto(@nb_threads) do |i|
-      @threads << Thread.new do 
-        self.run_job(@queues.keys[i % @queues.keys.length]) until self.empty? or @stopping
+    if @nb_threads == 1
+      self.run_job(@queues.keys[i % @queues.keys.length]) until self.empty? or @stopping
+    else
+      1.upto(@nb_threads) do |i|
+        @threads << Thread.new do 
+          self.run_job(@queues.keys[i % @queues.keys.length]) until self.empty? or @stopping
+        end
       end
     end
      

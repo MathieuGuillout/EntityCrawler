@@ -6,6 +6,7 @@ require_relative "site"
 require_relative "crawler"
 require_relative "cdn"
 require_relative "helper"
+require_relative "job_description"
 
 NB_MAX_ENTITIES_PER_CRAWL = 20
 
@@ -28,7 +29,6 @@ class Job
   def initialize entity_type, details, site_name, context = OpenStruct.new, options = OpenStruct.new
     @entity_type = entity_type
     @details = details
-    @crawl_timestamp = details.crawl_timestamp
     @site_name = site_name
     @context = context
     @level = 0
@@ -46,7 +46,7 @@ class Job
         @style[@entity_type].jobs ||= []
         @style[@entity_type].jobs.each do |next_entity_type|
           entity.crawl_timestamp = @crawl_timestamp
-          job = Job.new(next_entity_type, entity, @site_name, @context, @options)
+          job = JobDescription.new(entity.url, @site_name, next_entity_type)
           job.level = @level + 1
           jobs << job
         end
@@ -61,7 +61,7 @@ class Job
       links.each do |link|
         link[:crawl_timestamp] = @crawl_timestamp
         details = Helper.hostruct(link)
-        job = Job.new(link[:type], details, @site_name, @context, @options)
+        job = JobDescription.new(details.url, @site_name, link[:type])
         job.level = link[:type] == "site" ? 0 : 1
         jobs << job
       end
@@ -153,6 +153,7 @@ class Job
     #@handle_diffs   = @style[entity_type].handle_diffs || false
     @handle_diffs   = false
     @cdn_config     = @style["site"]["cdn"] || false
+    @context.path = style_factory.path
   end
 
   def perform(crawler=Crawler, style_factory)
@@ -162,6 +163,7 @@ class Job
     self.load_style(style_factory)
 
     url = @details.url || @style[@entity_type].url
+    p url
 
     context = @details
     context.path = @context.path if @context and @context.path

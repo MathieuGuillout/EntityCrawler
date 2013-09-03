@@ -1,5 +1,6 @@
 class StyleFactory
   
+  attr_accessor :path
   def initialize(stylesheet_path)
    
     @stylesheets = {}
@@ -12,7 +13,9 @@ class StyleFactory
           sites << site if site.style.site.crawl
         end
       end
+      @path = stylesheet_path + "to_replace"
     else
+      @path = stylesheet_path
       sites << Site.new(stylesheet_path)
     end
           
