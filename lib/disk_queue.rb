@@ -8,8 +8,11 @@ class DBQueue
         memory_buffer: 100
     }
 
-   def initialize(name, options = {})
-        @db = MongoClient.new("localhost", 27017, :pool_size => 10, :pool_timeout => 10).db("queue")
+   def initialize(name, db, options = {})
+        @filling = false
+        @saving = false
+        @empty_db = false
+        @db = db
         @collection = @db.collection("queues")
         @name = name
 
@@ -40,10 +43,13 @@ class DBQueue
     def add_to_db o
       @buffer_db << o
 
-      if @buffer_db.length >= @options[:memory_buffer]
+      if @buffer_db.length >= @options[:memory_buffer] and not @saving
+        p "SAVING #{@name}"
+        @saving = true
         to_save = @buffer_db.clone
         @buffer_db = []
         @collection.insert({ :name => @name, :buffer => Base64.encode64(Marshal.dump(to_save)) })
+        @saving = false
       end
     end
 
@@ -68,15 +74,22 @@ class DBQueue
     end
 
     def fill_from_db
-      entity = @collection.find_one( "name" => @name )
-      if not entity.nil?
-        data = Base64.decode64(entity["buffer"])
-        data = Marshal.load(data)
+      if not @filling and not @empty_db
+        p "FILLING #{@name}"
+        @filling = true
+        entity = @collection.find_one( "name" => @name )
+        if not entity.nil?
+          p entity["_id"]
+          data = Base64.decode64(entity["buffer"])
+          data = Marshal.load(data)
 
-        @q += data
-
-        @collection.remove(entity)
+          @q += data
+          @collection.remove(entity)
+        else
+          @empty_db = true
+          p "ENPTY DB"
+        end
+        @filling = false
       end
     end
-
 end

@@ -3,6 +3,9 @@ require "open-uri"
 require "pqueue"
 require 'ostruct'
 require 'bloom-filter'
+require 'mongo'
+require 'base64'
+include Mongo
 
 require_relative "graceful_quit"
 require_relative "disk_queue"
@@ -22,7 +25,7 @@ class CrawlingQueue
     @nb_threads = options[:nb_threads]
     @stopping = false
     @style_factory = options[:style_factory]
-    
+    @db = MongoClient.new("localhost", 27017, :pool_size => 10, :pool_timeout => 10).db("queue")
     @visited = self.urls_visited_to_resume()
     self.add_sites(options[:sites]) if options[:sites]
 
@@ -37,8 +40,8 @@ class CrawlingQueue
   end
 
   def add_site site_name
-    @queues[site_name] = DBQueue.new(site_name)
-    @pqueues[site_name] = DBQueue.new("p#{site_name}")
+    @queues[site_name] = DBQueue.new(site_name, @db)
+    @pqueues[site_name] = DBQueue.new("p#{site_name}", @db)
   
     if @visited[site_name].nil?
       @visited[site_name] = Set.new() #BloomFilter.new size: 100_000, error_rate: 0.01
@@ -84,7 +87,7 @@ class CrawlingQueue
   end
 
   def empty?
-    self.print!() if rand() > 0.95
+    #self.print!() if rand() > 0.999
     @queues.each do |key, queue|
       return false if not queue.empty?
     end
