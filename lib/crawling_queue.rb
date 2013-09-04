@@ -37,11 +37,11 @@ class CrawlingQueue
   end
 
   def add_site site_name
-    @queues[site_name] = DiskQueue.new()
-    @pqueues[site_name] = DiskQueue.new()
+    @queues[site_name] = Queue.new()
+    @pqueues[site_name] = Queue.new()
   
     if @visited[site_name].nil?
-      @visited[site_name] = BloomFilter.new size: 100_000, error_rate: 0.01
+      @visited[site_name] = Set.new() #BloomFilter.new size: 100_000, error_rate: 0.01
     end
   end
 
@@ -113,7 +113,7 @@ class CrawlingQueue
 
         job.perform(@style_factory)
 
-        @visited[job_description.site].insert(job_description.url)
+        @visited[job_description.site] << job_description.url
         
         job.new_jobs.each do |new_job| 
           if not new_job.url.match /https|javascript\./
@@ -143,7 +143,7 @@ class CrawlingQueue
     trap('INT') { self.stop_gracefully() }
 
     i = 0
-    while self.length < @nb_threads do 
+    while self.length < @nb_threads * 10 do 
       self.run_job @queues.keys[i % @queues.keys.length] 
       i += 1
     end
