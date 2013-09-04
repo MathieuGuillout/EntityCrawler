@@ -1,7 +1,7 @@
 class File
 
   def tail(n)
-    buffer = 128
+    buffer = 2048
     idx = (size - buffer).abs
 
     chunks = []
