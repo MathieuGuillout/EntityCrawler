@@ -1,44 +1,33 @@
-class File
+require 'mongo'
+require 'base64'
+include Mongo
 
-  def tail(n)
-    buffer = 2048
-    idx = (size - buffer).abs
-
-    chunks = []
-    lines = 0
-
-    begin
-      seek(idx)
-      chunk = read(buffer)
-      lines += chunk.count("\n")
-      chunks.unshift chunk
-      idx -= buffer
-    end while lines < ( n + 1 ) && pos != 0
-
-    tail_of_file = chunks.join('')
-    ary = tail_of_file.split(/\n/)
-    lines_to_return = ary[ ary.size - n, ary.size - 1 ]
-  end
-end
-
-class DiskQueue
+class DBQueue
 
     DEFAULT_OPTIONS = {
-        memory_buffer: 300
+        memory_buffer: 100
     }
 
-   def initialize( options = {} )
+   def initialize(name, options = {})
+        @db = MongoClient.new("localhost", 27017, :pool_size => 10, :pool_timeout => 10).db("queue")
+        @collection = @db.collection("queues")
+        @name = name
+
         @options     = DEFAULT_OPTIONS.merge( options )
-        @memory_buffer = @options[:memory_buffer]
 
         @size     = 0
         @q        = []
-        @buffer   = @options[:disk_buffer] || get_tempfile
+        @buffer   = []
+        @buffer_db = []
+    end
+
+    def full?
+      @q.length >= @options[:memory_buffer]
     end
 
     def <<( object )
         if full?
-            push_to_disk object
+            add_to_db object
         else
             @q << object
         end
@@ -48,30 +37,26 @@ class DiskQueue
     end
     alias :push :<<
 
+    def add_to_db o
+      @buffer_db << o
+
+      if @buffer_db.length >= @options[:memory_buffer]
+        to_save = @buffer_db.clone
+        @buffer_db = []
+        @collection.insert({ :name => @name, :buffer => Base64.encode64(Marshal.dump(to_save)) })
+      end
+    end
+
     def pop
         return if @q.empty?
         @size -= 1
         @q.shift
     ensure
-        fill_from_disk if reached_fill_threshold?
+        fill_from_db if reached_fill_threshold?
     end
 
-    def to_a
-        queue = dup
-        ary = []
-        while item = queue.pop
-            ary << item
-        end
-        ary
-    end
-
-    def dup
-        disk_buffer_copy = get_tempfile
-        IO.copy_stream @buffer, disk_buffer_copy
-
-        queue = self.class.new( disk_buffer: disk_buffer_copy )
-        queue.copy( @q, size )
-        queue
+    def reached_fill_threshold?
+      @q.empty? and @size > 0
     end
 
     def empty?
@@ -82,67 +67,15 @@ class DiskQueue
         @size
     end
 
-    def clear
-        @q.clear
-        @size = 0
-        nil
-    ensure
-        @buffer.close
-        @buffer.unlink
-    end
+    def fill_from_db
+      data = @collection.find_one( "name" => @name )
+      if not data.nil?
+        data = Base64.decode64(data["buffer"])
+        data = Marshal.load(data)
 
-    protected
-
-    def copy( memory_entries, sz )
-        @q    = memory_entries
-        @size = sz
-    end
-
-    private
-
-    def get_tempfile
-        Tempfile.open( 'DiskCache' )
-    end
-
-    def reached_fill_threshold?
-        @q.size <= @memory_buffer * 0.1
-    end
-
-    def full?
-        @q.size >= @memory_buffer
-    end
-
-    def push_to_disk( object )
-        @buffer.puts serialize( object )
-        @buffer.flush
-    end
-
-    def fill_from_disk
-        disk_buffer_size = @size - @q.size
-        return if disk_buffer_size == 0
-
-        items_to_get = @memory_buffer - @q.size
-        items_to_get = disk_buffer_size if items_to_get > disk_buffer_size
-
-        truncate = 0
-        @buffer.tail( items_to_get ).each do |serialized|
-            truncate += serialized.size + "\n".size
-            @q       << unserialize( serialized )
-        end
-
-        @buffer.truncate @buffer.size - truncate
-    end
-
-    def serialize( object )
-        Marshal.dump( object ).gsub( "\n", newline_placeholder )
-    end
-
-    def unserialize( dump )
-        Marshal.load( dump.gsub( newline_placeholder, "\n" ) )
-    end
-
-    def newline_placeholder
-        @newline_placeholder ||= Time.now.to_i.to_s
+        @q += data
+        p "BING"
+      end
     end
 
 end
