@@ -68,13 +68,14 @@ class DBQueue
     end
 
     def fill_from_db
-      data = @collection.find_one( "name" => @name )
-      if not data.nil?
-        data = Base64.decode64(data["buffer"])
+      entity = @collection.find_one( "name" => @name )
+      if not entity.nil?
+        data = Base64.decode64(entity["buffer"])
         data = Marshal.load(data)
 
         @q += data
-        p "BING"
+
+        @collection.remove(entity)
       end
     end
 
