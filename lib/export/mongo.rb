@@ -7,6 +7,8 @@ module EntityCrawl
   class MongoExport 
 
     @@db = nil
+    @@saving = false
+    @@buffer = []
 
     def MongoExport.are_not_the_same entity_crawled, entity_db
       true
@@ -20,8 +22,27 @@ module EntityCrawl
     end
 
     def MongoExport.save i_entities, entity_type, params = ""
+      @@buffer << { :entities => i_entities, :type => entity_type, :params => params }  
+      if not @@saving 
+        MongoExport.internal_save_all()
+      end
+    end
+
+    def MongoExport.internal_save_all 
+      to_save = @@buffer.clone()
+      @@buffer = []
+      @@saving = true
+
+      to_save.each do |r|
+        MongoExport.internal_save(r[:entities], r[:type], r[:params])
+      end
+      @@saving = false
+    end
+
+    def MongoExport.internal_save i_entities, entity_type, params = ""
       MongoExport.connect(params) if @@db.nil?
-     
+      
+
      
       entities = i_entities.find_all { |e|
         not e.title.nil? and not e.price.nil? 

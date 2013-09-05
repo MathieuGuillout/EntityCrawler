@@ -5,7 +5,7 @@ include Mongo
 class DBQueue
 
     DEFAULT_OPTIONS = {
-        memory_buffer: 100
+        memory_buffer: 500
     }
 
    def initialize(name, db, options = {})
@@ -66,7 +66,7 @@ class DBQueue
     end
 
     def empty?
-      @size == 0
+      @size == 0 or @empty_db
     end
 
     def size
