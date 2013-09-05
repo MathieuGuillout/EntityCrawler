@@ -44,7 +44,6 @@ class DBQueue
       @buffer_db << o
 
       if @buffer_db.length >= @options[:memory_buffer] and not @saving
-        p "SAVING #{@name}"
         @saving = true
         to_save = @buffer_db.clone
         @buffer_db = []
@@ -75,19 +74,17 @@ class DBQueue
 
     def fill_from_db
       if not @filling and not @empty_db
-        p "FILLING #{@name}"
         @filling = true
         entity = @collection.find_one( "name" => @name )
         if not entity.nil?
-          p entity["_id"]
           data = Base64.decode64(entity["buffer"])
           data = Marshal.load(data)
 
           @q += data
           @collection.remove(entity)
+          @empty_db = false
         else
           @empty_db = true
-          p "ENPTY DB"
         end
         @filling = false
       end
