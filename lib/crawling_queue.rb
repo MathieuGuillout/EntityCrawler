@@ -123,7 +123,8 @@ class CrawlingQueue
             new_job.url.gsub! /#.*$/, ''
             already_visited = @visited[job.site_name].include? new_job.url
             new_job.level = job_description.level + 1
-            self.add_job(new_job) if not(already_visited) and (new_job.level < 3 or new_job.type != "site")
+            add_to_queue = not(already_visited) and (new_job.level < 3 or new_job.type != "site") and (job_description.level <= 3)
+            self.add_job(new_job) if add_to_queue 
           end
         end
 
