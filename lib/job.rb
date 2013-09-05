@@ -62,7 +62,6 @@ class Job
         link[:crawl_timestamp] = @crawl_timestamp
         details = Helper.hostruct(link)
         job = JobDescription.new(details.url, @site_name, link[:type])
-        job.level = link[:type] == "site" ? 0 : 1
         jobs << job
       end
     end
@@ -183,5 +182,6 @@ class Job
   def clean
     @entities = []
     @new_jobs = []
+    @details = nil
   end
 end
