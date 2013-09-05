@@ -114,9 +114,9 @@ class CrawlingQueue
                       OpenStruct.new(:url => job_description.url), 
                       job_description.site)
 
+        @visited[job_description.site] << job_description.url
         job.perform(@style_factory)
 
-        @visited[job_description.site] << job_description.url
         
         job.new_jobs.each do |new_job| 
           if not new_job.url.match /https|javascript\:/
