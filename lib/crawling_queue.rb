@@ -122,7 +122,8 @@ class CrawlingQueue
           if not new_job.url.match /https|javascript\:/
             new_job.url.gsub! /#.*$/, ''
             already_visited = @visited[job.site_name].include? new_job.url
-            self.add_job(new_job) if not already_visited
+            new_job.level = job_description.level + 1
+            self.add_job(new_job) if not(already_visited) and new_job.level < 3
           end
         end
       end
