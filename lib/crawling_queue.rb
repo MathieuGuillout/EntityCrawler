@@ -119,7 +119,7 @@ class CrawlingQueue
         @visited[job_description.site] << job_description.url
         
         job.new_jobs.each do |new_job| 
-          if not new_job.url.match /https|javascript\./
+          if not new_job.url.match /https|javascript\:/
             new_job.url.gsub! /#.*$/, ''
             already_visited = @visited[job.site_name].include? new_job.url
             self.add_job(new_job) if not already_visited
