@@ -109,7 +109,7 @@ class CrawlingQueue
 
         if add_to_queue
           self.add_job(new_job) 
-          @visited[new_job.site] << new_job.url
+          @visited[new_job.site].insert new_job.url
         end
       end
 
