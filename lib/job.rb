@@ -22,57 +22,54 @@ class Job
 
   attr_accessor :options, 
                 :failures, 
-                :level,
-                :offset
+                :level
 
 
-  def initialize entity_type, details, site_name, context = OpenStruct.new, options = OpenStruct.new
-    @entity_type = entity_type
-    @details = details
-    @site_name = site_name
-    @context = context
-    @level = 0
-    @offset = 0
+  def initialize job_description 
+
+    @entity_type = job_description.type
+    @details = OpenStruct.new(:url => job_description.url)
+    @site_name = job_description.site
+
+    @context = OpenStruct.new()
+    @options = OpenStruct.new()
+
     @entities = []
-    @jobs = []
-    @options = options
-    @failures = 0
+    @new_jobs = []
+    
+    @job_description = job_description
   end
 
   def new_jobs_for_links links
-    jobs = []
-    if not links.nil?
-      links.each do |link|
-        link[:crawl_timestamp] = @crawl_timestamp
-        details = Helper.hostruct(link)
-        job = JobDescription.new(details.url, @site_name, link[:type])
-        jobs << job
-      end
+    links = [] if links.nil?
+   
+    links.map do |link|
+      details = Helper.hostruct(link)
+      job = JobDescription.new(details.url, @site_name, link[:type])
+      job.level = @job_description.level + 1
+      job
     end
-    jobs
   end
 
   def extraction(crawler=Crawler)
-
     url = @details.url || @style[@entity_type].url
+    print "#{@entity_type} : #{url}\n"
 
     ctx = @details
     ctx.cookies = @style["site"].cookies
     ctx.path = @context.path
 
     @entities, links = crawler.extract_entities url, @style[@entity_type], ctx 
-    @new_jobs += new_jobs_for_links links
+    @new_jobs = new_jobs_for_links links
 
-    # If no style on the command line, but style from the stylesheet
-    if not @options.export and @style["site"]["export"] 
+    if @style["site"]["export"] and @export_results
       @options.export = @style["site"]["export"]["type"]
       @options.to = @style["site"]["export"]["connection"]
-    end
 
-    if @options.export and @export_results
       export_method = Helper.get_export_method(@options.export, "save")
       @entities = export_method.call(@entities, @entity_type, @options.to)    
     end
+
 
     if @cdn_config and CDN.has_a_job @style, @entity_type
       CDN.save @style, @entity_type, @entities, @cdn_config
@@ -88,9 +85,6 @@ class Job
   end
 
   def perform(crawler=Crawler, style_factory)
-    @new_jobs = []
-    @entities = []
-
     self.load_style(style_factory)
     self.extraction(crawler)
   end

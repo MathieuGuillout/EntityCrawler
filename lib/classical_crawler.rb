@@ -8,14 +8,12 @@ class ClassicalCrawler
     @jobs = {}
     @regex_links = style.urls_to_follow.find_all {|u| not u.job }.map {|l| l.regex }
     @regex_jobs  = style.urls_to_follow.find_all {|u| u.job }
-    @regex_jobs.each do |r|
-      @jobs[r.job] = []
-    end
+    @regex_jobs.each do |r| @jobs[r.job] = [] end
   end
 
   def extract_links
 
-    page = open(URI::encode(@url), 'r', :read_timeout => 1)
+    page = open(URI::encode(@url), 'r', :read_timeout => 5)
     doc = Nokogiri::HTML(page)
 
     anchors = doc.css("a")
@@ -34,6 +32,12 @@ class ClassicalCrawler
                               .map{ |l| { :url => l, :type => reg.job } }
     end
     
+    extracted_links = extracted_links.find_all {|l|
+      not l[:url].match /https|javascript\:|mailto/
+    }.map {|l|
+      l[:url].gsub! /#.*$/, ''
+      l
+    }
     extracted_links
   end
 
