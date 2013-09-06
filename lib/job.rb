@@ -56,13 +56,11 @@ class Job
 
     url = @details.url || @style[@entity_type].url
 
-    p url
-
     ctx = @details
     ctx.cookies = @style["site"].cookies
+    ctx.path = @context.path
 
-    next_url, @entities, links = crawler.extract_entities url, @style[@entity_type], ctx 
-
+    @entities, links = crawler.extract_entities url, @style[@entity_type], ctx 
     @new_jobs += new_jobs_for_links links
 
     # If no style on the command line, but style from the stylesheet

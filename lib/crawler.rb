@@ -84,32 +84,19 @@ class Crawler
 
     url = url.strip() if not url.nil?
     if url.nil? or url == ""
-      return []
+      return [[], []]
     end
 
-    page = open(URI::encode(url), "Cookie" => context[:cookie])
-    doc = Nokogiri::HTML(page)
     if style.urls_to_follow
       ca = ClassicalCrawler.new url, style
       links = ca.run()
     else
+      page = open(URI::encode(url), "Cookie" => context[:cookie])
+      doc = Nokogiri::HTML(page)
       entities = Crawler.extract_entities_page doc, style, context
     end
-    
 
-    # Pagination handling
-    next_url = nil
-    if style.next_page
-      next_url = Crawler.extract_attribute doc, style.next_page.selector
-
-      if next_url 
-        next_url = Crawler.post_process next_url, "next_page", style, context
-        next_url = Processor.url next_url, { :url => url }
-        next_url = nil if next_url == url
-      end
-    end
-
-    [ next_url, entities, links ]
+    [ entities, links ]
   end
 
   def Crawler.get_handler handler_class, context

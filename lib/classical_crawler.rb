@@ -15,7 +15,7 @@ class ClassicalCrawler
 
   def extract_links
 
-    page = open(URI::encode(@url))
+    page = open(URI::encode(@url), 'r', :read_timeout => 1)
     doc = Nokogiri::HTML(page)
 
     anchors = doc.css("a")
