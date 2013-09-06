@@ -39,10 +39,6 @@ class Job
     @failures = 0
   end
 
-  def new_jobs_for entities
-    []
-  end
-
   def new_jobs_for_links links
     jobs = []
     if not links.nil?
@@ -56,61 +52,18 @@ class Job
     jobs
   end
 
-  def iterations 
-    url = @details.url || @style[@entity_type].url
-
-    regex_iterator = /\$\$iterator\$\$/
-
-    first, last = @style[@entity_type].iterator.split ".."
-    iterator = first..last
-
-    jobs = []
-    iterator.each do |it|
-      target_url = url.gsub regex_iterator, it.to_s
-      details = @details.clone
-      details.url = target_url
-      jobs << Job.new(@entity_type, details, @site_name, @context, @options)
-    end
-
-    @new_jobs = jobs
-  end
-
   def extraction(crawler=Crawler)
 
     url = @details.url || @style[@entity_type].url
+
+    p url
 
     ctx = @details
     ctx.cookies = @style["site"].cookies
 
     next_url, @entities, links = crawler.extract_entities url, @style[@entity_type], ctx 
 
-    @entities = [] if @entities.nil?
-    @entities = @entities.map do |entity| 
-      entity.crawl_timestamp = @crawl_timestamp
-      entity
-    end
-
-    @entities = @entities[@offset, NB_MAX_ENTITIES_PER_CRAWL]
-
-    repage_job = nil
-    if not @entities.nil? and @entities.length == NB_MAX_ENTITIES_PER_CRAWL
-      repage_job = self.clone()
-      repage_job.clean()
-      repage_job.offset += NB_MAX_ENTITIES_PER_CRAWL
-    end
-
-    @new_jobs = new_jobs_for @entities
-    @new_jobs << repage_job if not repage_job.nil?
-
-    if not next_url.nil?
-      new_job = self.clone()
-      new_job.clean()
-      new_job.details.url = next_url
-      @new_jobs << new_job
-    end
-
     @new_jobs += new_jobs_for_links links
-
 
     # If no style on the command line, but style from the stylesheet
     if not @options.export and @style["site"]["export"] 
@@ -123,11 +76,6 @@ class Job
       @entities = export_method.call(@entities, @entity_type, @options.to)    
     end
 
-    if @options.export and @handle_diffs
-      diff_method = Helper.get_export_method(@options.export, "diff")
-      diff_method.call(url, @handle_diffs, @entities, @entity_type, @options.to)
-    end
-
     if @cdn_config and CDN.has_a_job @style, @entity_type
       CDN.save @style, @entity_type, @entities, @cdn_config
     end
@@ -137,34 +85,16 @@ class Job
   def load_style(style_factory)
     @style = style_factory.load(@site_name)
     @export_results = (@style[entity_type] and @style[entity_type].save) ? true : false
-    #@handle_diffs   = @style[entity_type].handle_diffs || false
-    @handle_diffs   = false
     @cdn_config     = @style["site"]["cdn"] || false
     @context.path = style_factory.path
   end
 
   def perform(crawler=Crawler, style_factory)
-
     @new_jobs = []
+    @entities = []
 
     self.load_style(style_factory)
-
-    url = @details.url || @style[@entity_type].url
-    p url
-
-    context = @details
-    context.path = @context.path if @context and @context.path
-
-    @entities = []
-  
-    regex_iterator = /\$\$iterator\$\$/
-   
-    if @style[@entity_type].iterator and url.match regex_iterator
-      self.iterations()
-    else
-      self.extraction(crawler)
-    end
-
+    self.extraction(crawler)
   end
 
   def clean
