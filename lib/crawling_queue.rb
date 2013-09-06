@@ -91,23 +91,22 @@ class CrawlingQueue
 
     begin 
       job_description = self.find_job site_name
-      if not job_description.nil? and 
-         not @visited[job_description.site].include? job_description.url
         
-        style = @style_factory.load(job_description.site)
-        job = Job.new job_description
+      style = @style_factory.load(job_description.site)
+      job = Job.new job_description
 
-        @visited[job_description.site] << job_description.url
-        job.perform(@style_factory)
+      job.perform(@style_factory)
 
-        
-        job.new_jobs.each do |new_job| 
-          already_visited = @visited[job.site_name].include? new_job.url
-          add_to_queue = not(already_visited) and 
-                         (new_job.level < 3 or new_job.type != "site") and 
-                         (job_description.level <= 3)
+      
+      job.new_jobs.each do |new_job| 
+        already_visited = @visited[job.site_name].include? new_job.url
+        add_to_queue = not(already_visited) and 
+                       (new_job.level < 3 or new_job.type != "site") and 
+                       (job_description.level <= 3)
 
-          self.add_job(new_job) if add_to_queue 
+        if add_to_queue
+          self.add_job(new_job) 
+          @visited[new_job.site] << new_job.url
         end
       end
 
