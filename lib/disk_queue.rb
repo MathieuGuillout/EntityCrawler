@@ -84,9 +84,9 @@ class DBQueue
           data = Base64.decode64(entity["buffer"])
           data = Marshal.load(data)
           
-          p "BING"
           @q += data
-          @size += @q.length
+          @size += @q.length if @resuming
+
           @collection.remove(entity)
           @empty_db = false
         else

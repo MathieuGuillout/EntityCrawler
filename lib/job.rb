@@ -150,6 +150,7 @@ class Job
     self.load_style(style_factory)
 
     url = @details.url || @style[@entity_type].url
+    p url
 
     context = @details
     context.path = @context.path if @context and @context.path
