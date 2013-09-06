@@ -24,6 +24,10 @@ class DBQueue
         @buffer_db = []
     end
 
+    def resume
+      fill_from_db()
+    end
+
     def full?
       @q.length >= @options[:memory_buffer]
     end
@@ -79,8 +83,10 @@ class DBQueue
         if not entity.nil?
           data = Base64.decode64(entity["buffer"])
           data = Marshal.load(data)
-
+          
+          p "BING"
           @q += data
+          @size += @q.length
           @collection.remove(entity)
           @empty_db = false
         else

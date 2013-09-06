@@ -25,16 +25,19 @@ class CrawlingQueue
     @nb_threads = options[:nb_threads]
     @stopping = false
     @style_factory = options[:style_factory]
+    @resuming = options[:resume]
     @db = MongoClient.new("localhost", 27017, :pool_size => 10, :pool_timeout => 10).db("queue")
-    @visited = self.urls_visited_to_resume()
+
+
+
     self.add_sites(options[:sites]) if options[:sites]
 
+    #@visited = self.urls_visited_to_resume()
+    #jobs_to_resume = self.jobs_to_resume()
+    #if jobs_to_resume.length > 0
+    #  self.add_jobs(jobs_to_resume)
     
-    jobs_to_resume = self.jobs_to_resume()
-
-    if jobs_to_resume.length > 0
-      self.add_jobs(jobs_to_resume)
-    else
+    if not @resuming
       self.add_jobs(options[:jobs]) if options[:jobs]
     end
   end
@@ -42,6 +45,11 @@ class CrawlingQueue
   def add_site site_name
     @queues[site_name] = DBQueue.new(site_name, @db)
     @pqueues[site_name] = DBQueue.new("p#{site_name}", @db)
+
+    if @resuming
+      @queues[site_name].resume()
+      @pqueues[site_name].resume()
+    end
   
     if @visited[site_name].nil?
       @visited[site_name] = Set.new() #BloomFilter.new size: 100_000, error_rate: 0.01
@@ -67,6 +75,7 @@ class CrawlingQueue
   end
 
   def find_job site_name
+    p site_name
     if not @pqueues[site_name].empty?
       return @pqueues[site_name].pop()
     elsif not @queues[site_name].empty?
@@ -106,9 +115,9 @@ class CrawlingQueue
   def run_job site_name
     begin 
       job_description = self.find_job site_name
-
+    
       if not job_description.nil? and not @visited[job_description.site].include? job_description.url
-
+        
         style = @style_factory.load(job_description.site)
         job = Job.new(job_description.type, 
                       OpenStruct.new(:url => job_description.url), 
@@ -119,6 +128,7 @@ class CrawlingQueue
 
         
         job.new_jobs.each do |new_job| 
+          p new_job
           if not new_job.url.match /https|javascript\:/
             new_job.url.gsub! /#.*$/, ''
             already_visited = @visited[job.site_name].include? new_job.url

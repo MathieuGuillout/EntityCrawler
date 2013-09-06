@@ -40,19 +40,7 @@ class Job
   end
 
   def new_jobs_for entities
-    jobs = []
-    if not entities.nil?
-      entities.each do |entity|
-        @style[@entity_type].jobs ||= []
-        @style[@entity_type].jobs.each do |next_entity_type|
-          entity.crawl_timestamp = @crawl_timestamp
-          job = JobDescription.new(entity.url, @site_name, next_entity_type)
-          job.level = @level + 1
-          jobs << job
-        end
-      end
-    end
-    jobs
+    []
   end
 
   def new_jobs_for_links links
@@ -90,7 +78,7 @@ class Job
   def extraction(crawler=Crawler)
 
     url = @details.url || @style[@entity_type].url
-    
+    p url    
 
     ctx = @details
     ctx.cookies = @style["site"].cookies
