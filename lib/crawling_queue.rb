@@ -35,7 +35,8 @@ class CrawlingQueue
   def add_site site_name
     @queues[site_name]  = DBQueue.new(site_name, @db)
     @pqueues[site_name] = DBQueue.new("p#{site_name}", @db)
-    @visited[site_name] = Set.new() if @visited[site_name].nil?
+    #@visited[site_name] = Set.new() if @visited[site_name].nil?
+    @visited[site_name] = BloomFilter.new(size: 100_000, error_rate: 0.01) if @visited[site_name].nil?
   end
 
   def add_sites sites
@@ -91,7 +92,9 @@ class CrawlingQueue
 
     begin 
       job_description = self.find_job site_name
-        
+      
+      return if job_description.nil?
+
       style = @style_factory.load(job_description.site)
       job = Job.new job_description
 
