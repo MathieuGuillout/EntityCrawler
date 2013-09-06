@@ -53,7 +53,7 @@ class Job
 
   def extraction(crawler=Crawler)
     url = @details.url || @style[@entity_type].url
-    print "#{@entity_type} : #{url}\n"
+    #print "#{@entity_type} #{url}\n"
 
     ctx = @details
     ctx.cookies = @style["site"].cookies
