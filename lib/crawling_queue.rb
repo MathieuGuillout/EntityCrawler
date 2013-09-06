@@ -75,7 +75,6 @@ class CrawlingQueue
   end
 
   def find_job site_name
-    p site_name
     if not @pqueues[site_name].empty?
       return @pqueues[site_name].pop()
     elsif not @queues[site_name].empty?
@@ -128,7 +127,6 @@ class CrawlingQueue
 
         
         job.new_jobs.each do |new_job| 
-          p new_job
           if not new_job.url.match /https|javascript\:/
             new_job.url.gsub! /#.*$/, ''
             already_visited = @visited[job.site_name].include? new_job.url
