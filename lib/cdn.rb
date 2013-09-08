@@ -51,7 +51,7 @@ end
 class CDN
 
   def CDN.save style, entity_type, entities, config
-    
+   
     s3 = AWS::S3.new(
       :access_key_id => config.amazon.access_key_id, 
       :secret_access_key => config.amazon.secret_access_key
@@ -59,18 +59,20 @@ class CDN
     s3_bucket = s3.buckets[config.amazon.bucket]
 
 
-    entities.find_all{|entity| !entity.update }.each do |entity|
+    entities.each do |entity|
 
       style_attribs(style, entity_type).each do |k, v|
 
         if v.kind_of? Hash and v[:cdn]
           url = entity[k.to_s]
-          key = Digest::MD5.hexdigest(url)
+          if not url.nil?
+            key = Digest::MD5.hexdigest(url)
 
-          download_file url, key, config
-          process_file  key, config, v[:cdn]
-          upload_file   key, config, v[:cdn], s3_bucket
-          remove_file   key, config
+            download_file url, key, config
+            process_file  key, config, v[:cdn]
+            upload_file   key, config, v[:cdn], s3_bucket
+            remove_file   key, config
+          end
         end
 
       end

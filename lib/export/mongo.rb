@@ -26,6 +26,7 @@ module EntityCrawl
       if not @@saving 
         MongoExport.internal_save_all()
       end
+      i_entities
     end
 
     def MongoExport.internal_save_all 
