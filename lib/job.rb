@@ -30,6 +30,7 @@ class Job
     @entity_type = job_description.type
     @details = OpenStruct.new(:url => job_description.url)
     @site_name = job_description.site
+    @debug = false
 
     @context = OpenStruct.new()
     @options = OpenStruct.new()
@@ -53,7 +54,7 @@ class Job
 
   def extraction(crawler=Crawler)
     url = @details.url || @style[@entity_type].url
-    #print "#{@entity_type} #{url}\n"
+    print "#{@entity_type} #{url}\n" if @debug
 
     ctx = @details
     ctx.cookies = @style["site"].cookies
@@ -84,7 +85,8 @@ class Job
     @context.path = style_factory.path
   end
 
-  def perform(crawler=Crawler, style_factory)
+  def perform(crawler=Crawler, style_factory, debug)
+    @debug = debug
     self.load_style(style_factory)
     self.extraction(crawler)
   end

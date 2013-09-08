@@ -22,6 +22,7 @@ command :'crawl' do |c|
   c.option "--threads NB", String, "Run locally with NB threads"
   c.option "--url URL", String, "Url to crawl"
   c.option "--resume", "Resume from the DB queued tasks"
+  c.option "--debug", "Debug mode, really verbose"
   c.option "--entity ENTITY", String, "Type of entity to crawl"
 
   c.action { |args, options| 
@@ -79,7 +80,8 @@ def crawl_website stylesheet_path, options
     :sites => sites,
     :jobs  => jobs,
     :style_factory => style_factory,
-    :resume => options.resume
+    :resume => options.resume,
+    :debug => options.debug
   )
 
   queue.run()

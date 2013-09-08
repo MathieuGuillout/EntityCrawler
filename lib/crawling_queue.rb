@@ -21,7 +21,10 @@ class CrawlingQueue
     @pqueues = {}
 
     @visited = {}
+    @pvisited = {}
     @threads = []
+
+    @debug = options[:debug] || false
 
     @nb_threads = options[:nb_threads]
     @style_factory = options[:style_factory]
@@ -35,8 +38,8 @@ class CrawlingQueue
   def add_site site_name
     @queues[site_name]  = DBQueue.new(site_name, @db)
     @pqueues[site_name] = DBQueue.new("p#{site_name}", @db)
-    #@visited[site_name] = Set.new() if @visited[site_name].nil?
-    @visited[site_name] = BloomFilter.new(size: 100_000, error_rate: 0.01) if @visited[site_name].nil?
+    @visited[site_name] = Set.new() if @visited[site_name].nil?
+    @pvisited[site_name] = Set.new() if @pvisited[site_name].nil?
   end
 
   def add_sites sites
@@ -98,18 +101,17 @@ class CrawlingQueue
       style = @style_factory.load(job_description.site)
       job = Job.new job_description
 
-      job.perform(@style_factory)
+      job.perform(@style_factory, @debug)
 
       
       job.new_jobs.each do |new_job| 
-        already_visited = @visited[job.site_name].include? new_job.url
-        add_to_queue = not(already_visited) and 
+        add_to_queue = not(already_visited(new_job)) and 
                        (new_job.level < 3 or new_job.type != "site") and 
                        (job_description.level <= 3)
 
         if add_to_queue
           self.add_job(new_job) 
-          @visited[new_job.site].insert new_job.url
+          add_to_visited new_job
         end
       end
 
@@ -118,6 +120,24 @@ class CrawlingQueue
     end
 
     job.clean() if not job.nil?
+  end
+
+  def add_to_visited job
+    if job.type == "site"
+      @visited[job.site] << job.url
+    else 
+      @pvisited[job.site] << job.url
+    end
+  end
+
+  def already_visited job
+    if job.type == "site"
+      @visited[job.site].include?(job.url) or
+      @visited[job.site].length > 100000
+    else 
+      @pvisited[job.site].include?(job.url) or
+      @visited[job.site].length > 60000
+    end
   end
 
   def display_exception ex
