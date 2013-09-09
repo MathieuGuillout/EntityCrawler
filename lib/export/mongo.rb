@@ -49,6 +49,7 @@ module EntityCrawl
         not e.title.nil? and not e.price.nil? 
       }
 
+
       collection_name = "#{entity_type}s"
       collection = @@db.collection(collection_name)
 
@@ -68,7 +69,10 @@ module EntityCrawl
       to_update = entities.find_all{|entity| existing_entities_ids.include? entity.id }
 
       # Perform operations on db
-      to_add.each do |entity| collection.insert(entity.marshal_dump) end
+      to_add.each do |entity| 
+        collection.insert(entity.marshal_dump) 
+      end
+
       to_update.each do |entity| 
         entity_db = existing_entities.find_all{ |ed| entity.id == ed[:id] }.first
         update = MongoExport.are_not_the_same entity, entity_db

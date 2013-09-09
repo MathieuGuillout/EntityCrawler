@@ -2,6 +2,7 @@ require 'digest/md5'
 require "open-uri"
 require 'rubygems'
 require 'aws-sdk'
+require 'timeout'
 
 
 def style_attribs style, entity_type
@@ -49,15 +50,53 @@ end
 
 
 class CDN
+  
+
+  @@queue = []
+  @@saving = false
+  @@running = false
 
   def CDN.save style, entity_type, entities, config
-   
+    @@queue << { :style => style, :entity_type => entity_type, :entities => entities, :config => config }
+    if not @@running
+      CDN.run()
+    end
+  end
+
+  def CDN.empty_queue
+    while @@queue.length > 0
+      j = @@queue.pop
+      begin
+        Timeout::timeout(1) {
+          CDN.internal_save j[:style], j[:entity_type], j[:entities], j[:config]
+        }
+      rescue => ex
+        p ex.class
+        @@queue << j if ex.class == AWS::S3::Errors::RequestTimeout or ex.class == Timeout::Error
+      end
+    end
+  end
+
+  def CDN.run()
+    t = Thread.new do 
+      while true do
+        @@running = true
+        CDN.empty_queue
+        sleep 3
+      end
+    end
+    t.join()
+  end
+
+  def CDN.internal_save style, entity_type, entities, config
+  
+
     s3 = AWS::S3.new(
       :access_key_id => config.amazon.access_key_id, 
       :secret_access_key => config.amazon.secret_access_key
     )
-    s3_bucket = s3.buckets[config.amazon.bucket]
 
+    s3_bucket = s3.buckets[config.amazon.bucket]
 
     entities.each do |entity|
 
@@ -66,6 +105,8 @@ class CDN
         if v.kind_of? Hash and v[:cdn]
           url = entity[k.to_s]
           if not url.nil?
+            p url
+
             key = Digest::MD5.hexdigest(url)
 
             download_file url, key, config
