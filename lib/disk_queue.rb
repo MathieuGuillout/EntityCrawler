@@ -5,7 +5,7 @@ include Mongo
 class DBQueue
 
     DEFAULT_OPTIONS = {
-        memory_buffer: 500
+        memory_buffer: 100
     }
 
    def initialize(name, db, options = {})

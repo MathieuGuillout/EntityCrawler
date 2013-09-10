@@ -2,7 +2,6 @@ require 'set'
 require "open-uri"
 require "pqueue"
 require 'ostruct'
-require 'bloom-filter'
 require 'mongo'
 require 'base64'
 include Mongo
@@ -11,6 +10,7 @@ require_relative "graceful_quit"
 require_relative "disk_queue"
 require_relative "job_description"
 require_relative "job"
+require_relative "bloom"
 
 TMP_FILE = "tmp.data"
 
@@ -38,8 +38,8 @@ class CrawlingQueue
   def add_site site_name
     @queues[site_name]  = DBQueue.new(site_name, @db)
     @pqueues[site_name] = DBQueue.new("p#{site_name}", @db)
-    @visited[site_name] = Set.new() if @visited[site_name].nil?
-    @pvisited[site_name] = Set.new() if @pvisited[site_name].nil?
+    @visited[site_name] = Bloom.new() if @visited[site_name].nil?
+    @pvisited[site_name] = Bloom.new() if @pvisited[site_name].nil?
   end
 
   def add_sites sites
@@ -124,9 +124,9 @@ class CrawlingQueue
 
   def add_to_visited job
     if job.type == "site"
-      @visited[job.site] << job.url
+      @visited[job.site].insert job.url
     else 
-      @pvisited[job.site] << job.url
+      @pvisited[job.site].insert job.url
     end
   end
 

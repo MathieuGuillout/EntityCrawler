@@ -3,6 +3,7 @@ require "open-uri"
 require 'rubygems'
 require 'aws-sdk'
 require 'timeout'
+require_relative 'disk_queue'
 
 
 def style_attribs style, entity_type
@@ -52,7 +53,8 @@ end
 class CDN
   
 
-  @@queue = []
+  @@db = MongoClient.new("localhost", 27017, :pool_size => 10, :pool_timeout => 10).db("queue")
+  @@queue = DBQueue.new("images", @@db)
   @@saving = false
   @@running = false
 
@@ -64,15 +66,20 @@ class CDN
   end
 
   def CDN.empty_queue
-    while @@queue.length > 0
+    while @@queue.size > 0
       j = @@queue.pop
       begin
         Timeout::timeout(1) {
           CDN.internal_save j[:style], j[:entity_type], j[:entities], j[:config]
         }
       rescue => ex
-        p ex.class
         @@queue << j if ex.class == AWS::S3::Errors::RequestTimeout or ex.class == Timeout::Error
+
+        print "Exception : #{ex}\n" 
+        ex.backtrace.each do |row|
+          print row, "\n"
+        end
+
       end
     end
   end
@@ -105,8 +112,6 @@ class CDN
         if v.kind_of? Hash and v[:cdn]
           url = entity[k.to_s]
           if not url.nil?
-            p url
-
             key = Digest::MD5.hexdigest(url)
 
             download_file url, key, config
